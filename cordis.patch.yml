@@ -1,0 +1,7 @@
+# Activation layer for @apodemakeles/dsh-gui (the desktop shell bundle).
+# `dsh plugin --profile gui add github:apodemakeles/dsh-gui` appends this
+# bundle to dsh.profile.bundles automatically (the dsh.bundle.patch manifest in
+# package.json points here); no manual profile edit needed.
+- insert:
+    - id: dsh-gui
+      name: '@apodemakeles/dsh-gui'

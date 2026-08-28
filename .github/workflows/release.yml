@@ -1,0 +1,29 @@
+# On version tags: verify the build, then cut a GitHub Release.
+# Distribution is the repository itself (git installs via dsh plugin add);
+# there is no npm publishing. Standalone .app artifacts are a future option
+# (see .scratch/dsh-gui-scaffold/, ticket 03).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm test
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

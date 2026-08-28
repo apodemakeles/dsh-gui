@@ -1,0 +1,34 @@
+name: Bug 报告 / Bug report
+description: 报告 dsh-gui 的问题（请勿包含 API key 或 ~/.dsh/ 下的敏感数据）
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 发生了什么？期望是什么？
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: 版本
+      description: dsh 版本（dsh --version）、dsh-gui 版本、操作系统与芯片（如 macOS arm64）
+      placeholder: dsh 0.1.x-rc / dsh-gui v0.1.0 / macOS arm64
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. dsh plugin --profile gui add github:apodemakeles/dsh-gui
+        2. dsh --profile gui
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 脱敏后的终端输出（请先抹去密钥/token/路径中的用户数据）

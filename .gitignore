@@ -1,0 +1,33 @@
+# 依赖
+node_modules/
+
+# 构建产物（electron-vite 输出 out/，electron-builder 输出 release/，插件产物 lib/）
+out/
+dist/
+release/
+lib/
+*.tsbuildinfo
+
+# 日志
+*.log
+logs/
+
+# 缓存
+.vite/
+*.tgz
+
+# 环境变量与本地密钥（证书、签名、API key）
+.env
+.env.*
+!.env.example
+dev-app-update.yml
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+*.pfx
+
+# 编辑器/系统
+.DS_Store
+Thumbs.db
+.idea/

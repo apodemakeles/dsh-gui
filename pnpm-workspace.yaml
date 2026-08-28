@@ -1,0 +1,9 @@
+# Build-script approvals (pnpm v11 syntax).
+# electron: downloads the runtime binary; esbuild: platform binary;
+# electron-winstaller: windows packaging helper (electron-builder dep).
+# Note: consumers installing dsh-gui via `dsh plugin add` approve builds in
+# THEIR profile's pnpm-workspace.yaml — see README "Install".
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  esbuild: true
