@@ -1,6 +1,2 @@
-/** Constants shared across shell halves (main / preload / renderer). */
-
-export const APP_NAME = 'dsh-gui'
-
-/** Delivery stage marker — 'scaffold' until the web-client assembly lands. */
-export const APP_STAGE = 'scaffold' as const
+/** Re-export shell constants used by the placeholder renderer and tests. */
+export { APP_NAME } from './scheme.ts'

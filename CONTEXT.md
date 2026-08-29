@@ -5,7 +5,7 @@ dsh 的桌面壳：以 dsh 插件（bundle）身份交付的 Electron 应用，�
 ## Language
 
 **壳（Shell）**:
-dsh-gui 的 Electron 应用部分——主进程与渲染进程，用 `file://` 加载官方 web client，提供原生桌面能力。
+dsh-gui 的 Electron 应用部分——主进程与渲染进程，用 `dsh-gui://` 加载官方 web client（ADR 0001），提供原生桌面能力。
 _Avoid_: App、客户端（App 留给未来可能的独立 .app 形态）
 
 **gui profile**:
@@ -17,7 +17,7 @@ _Avoid_: 桌面 profile、desktop profile
 _Avoid_: 壳插件（易与壳内代码混淆）
 
 **IPC fetch carrier**:
-渲染进程与宿主之间的运输层：AbstractApiClient 的子类，只替换 `doFetch`，请求经 Electron IPC 而非 HTTP送达宿主。
+渲染进程与宿主之间的运输层：`AbstractApiClient` 的子类只替换 `doFetch`。桌面实现里页面同源 `fetch` 打到 `dsh-gui://`，main 经 Unix socket 交给 `connection.createSharedFetchHandler('/api', toFetchHandler)`（无 TCP 端口）。Typert 远程走 interceptor，会话 RPC 与 SSE 走 fallback；不使用 connection 挂在 webServer 上的 HTTP `/api`（事件 GET 会 426）。
 _Avoid_: IPC 桥（泛称）
 
 **功能模块**:

@@ -1,7 +1,7 @@
 /**
  * Electron shell build (three targets, agent-connector lineage):
  * - main:     src/shell/main/index.ts     -> out/main/index.js
- * - preload:  src/shell/preload/index.ts  -> out/preload/index.js
+ * - preload:  src/shell/preload/index.ts  -> out/preload/index.mjs
  * - renderer: src/shell/renderer/         -> out/renderer/
  * The dsh plugin half (src/index.ts) is built separately by tsdown -> lib/.
  */
@@ -19,7 +19,9 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [
+      externalizeDepsPlugin({ exclude: ['@deepseek-ai/dsh-host-apiproxy'] }),
+    ],
     build: {
       rollupOptions: {
         input: { index: 'src/shell/preload/index.ts' },

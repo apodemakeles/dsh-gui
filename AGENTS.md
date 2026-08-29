@@ -4,7 +4,7 @@
 
 ## 1. 项目是什么
 
-dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付的 Electron 应用**。`dsh --profile gui` 拉起宿主 → 本插件启动 Electron 壳 → 壳用 `file://` 加载官方 web client、fetch 走 IPC carrier——**不重写任何 dsh 核心功能**。单包一站式交付：全部功能模块随一个包安装，用户无按功能选择的粒度。
+dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付的 Electron 应用**。`dsh --profile gui` 拉起宿主 → 本插件启动 Electron 壳 → 壳用 `dsh-gui://` 加载官方 web client（ADR 0001；无 TCP 端口）、fetch 走 IPC fetch carrier——**不重写任何 dsh 核心功能**。单包一站式交付：全部功能模块随一个包安装，用户无按功能选择的粒度。
 
 - 术语表：[CONTEXT.md](CONTEXT.md)（壳、gui profile、dsh-gui bundle、IPC fetch carrier、功能模块）。
 - 规划与调研：`.scratch/dsh-gui-scaffold/`（决策历史、两份一手调研）。
@@ -13,18 +13,22 @@ dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付
 
 ```
 ├── src/
-│   ├── index.ts        # 唯一插件入口：apply() 在此注册全部功能模块
+│   ├── index.ts        # 唯一插件入口：apply() 拉起壳并注册功能模块
+│   ├── assembly/       # 纯函数：dist 定位、静态路径、Unix HTTP、session JSON（无 Electron / Cordis）
+│   ├── host/           # Cordis 半区：静默 webServer、写 session、spawn Electron
 │   ├── shell/          # Electron 壳（electron-vite 三目标构建 → out/）
-│   │   ├── main/       #   主进程：窗口、原生能力、宿主生命周期
-│   │   ├── preload/    #   桥梁层：未来 IPC fetch carrier 的落点
-│   │   ├── renderer/   #   界面层：当前占位页，未来加载官方 web client
+│   │   ├── main/       #   主进程：窗口、自定义协议、生命周期
+│   │   ├── preload/    #   页面世界：安装 __DSH_TRANSPORT__
+│   │   ├── renderer/   #   pnpm dev 占位页（真实 client 由协议加载）
 │   │   └── shared/     #   两侧共用常量/类型
 │   └── features/       # 功能模块：一个子功能一个文件夹，由 index.ts 统一注册
-├── test/               # vitest（plugin-shape 形状测试）
+├── test/               # vitest
 ├── docs/               # adr/（架构决策记录）+ images/（截图）
 ├── .github/            # 只放执行器：workflows/ + issue/PR 模板
 └── lib/ out/ release/  # 构建产物（不入库）
 ```
+
+第二 Cordis 入口：`package.json` 的 `exports["./webserver"]`（静默 `webServer` 替身）。
 
 **新增功能模块**的做法：在 `src/features/<名>/` 建文件夹，实现后在 `src/index.ts` 的 `apply()` 里注册。不建独立插件包、不新增 dsh.bundle 声明。
 
@@ -32,7 +36,7 @@ dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付
 
 - **三层积木**：plugin（导出 `apply(ctx)` 的模块）→ bundle（npm 包，`package.json` 声明 `dsh.bundle.patch` 指向 `cordis.patch.yml`）→ profile（`~/.dsh/profiles/<name>` 的 bundle 组合清单；`dsh --profile gui` 启动）。
 - **槽位系统**：web client 界面上的具名插槽（侧栏、面板、设置卡），插件的 client 半区往槽位注册 React 组件。
-- **IPC fetch carrier**：官方 web client 与宿主间的请求全部汇于 `AbstractApiClient.doFetch`；Electron 壳只替换该函数为 IPC 传输，契约不变——这是「不重写 dsh 功能」的传输层落点。
+- **IPC fetch carrier**：官方 web client 与宿主间的请求全部汇于 `AbstractApiClient.doFetch`；壳只替换该函数。桌面实现里页面同源 fetch 打到 `dsh-gui://`，main 经 Unix socket 交给 `connection.createSharedFetchHandler('/api', toFetchHandler)`（无 TCP 端口）——这是「不重写 dsh 功能」的运输层落点。
 - 官方文档：[deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 的 `docs/`（插件教程 `docs/user/develop/basic/`、cookbook）。
 - 本仓库存档调研：`.scratch/dsh-gui-scaffold/research/dsh-plugin-standards.md`（插件规范逐条带出处）、`oss-repo-standards.md`（社区标准）。
 - 本屋成熟插件范本：`dsh-token-dashboard`（双半区、槽位、Worker、发布全流程实证）。
