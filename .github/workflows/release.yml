@@ -1,7 +1,7 @@
-# On version tags: verify the build, then cut a GitHub Release.
-# Distribution is the repository itself (git installs via dsh plugin add);
-# there is no npm publishing. Standalone .app artifacts are a future option
-# (see .scratch/dsh-gui-scaffold/, ticket 03).
+# On version tags: verify the build, package the launcher .app, then cut a
+# GitHub Release. Distribution of functionality is the repository itself
+# (git installs via dsh plugin add); the .app is the standalone launcher
+# entry point (see docs/adr/0003). No npm publishing, no code signing.
 name: Release
 
 on:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       contents: write
     steps:
@@ -24,6 +24,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
+      - run: pnpm package:mac
+      - name: Zip the .app (ditto preserves permissions)
+        run: ditto -c -k --keepParent release/mac-arm64/dsh-gui.app release/dsh-gui-mac-arm64.app.zip
       - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
+          files: release/dsh-gui-mac-arm64.app.zip

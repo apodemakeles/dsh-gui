@@ -2,6 +2,14 @@
 
 export const SESSION_ENV = 'DSH_GUI_SESSION'
 
+/**
+ * Launcher contract: when set to a directory path, the host is being spawned
+ * BY an already-running shell (the packaged .app). The host then skips
+ * spawning Electron itself and writes the session handshake into that
+ * directory instead of a private mkdtemp, so the launcher can find it.
+ */
+export const EXTERNAL_SHELL_DIR_ENV = 'DSH_GUI_EXTERNAL_SHELL_DIR'
+
 export interface ShellSession {
   /** Unix socket where the host serves the shared `/api` fetch handler (no TCP port). */
   socketPath: string
