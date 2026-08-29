@@ -14,6 +14,7 @@ dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付
 ```
 ├── src/
 │   ├── index.ts        # 唯一插件入口：apply() 拉起壳并注册功能模块
+│   ├── client/         # 浏览器半区组合入口：所有功能模块的 UI 注册进同一个 client bundle
 │   ├── assembly/       # 纯函数：dist 定位、静态路径、Unix HTTP、session JSON（无 Electron / Cordis）
 │   ├── host/           # Cordis 半区：静默 webServer、写 session、spawn Electron
 │   ├── shell/          # Electron 壳（electron-vite 三目标构建 → out/）
@@ -21,16 +22,16 @@ dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付
 │   │   ├── preload/    #   页面世界：安装 __DSH_TRANSPORT__
 │   │   ├── renderer/   #   pnpm dev 占位页（真实 client 由协议加载）
 │   │   └── shared/     #   两侧共用常量/类型
-│   └── features/       # 功能模块：一个子功能一个文件夹，由 index.ts 统一注册
+│   └── features/       # 功能模块：一个子功能一个文件夹（host/client 两侧），由 index.ts 统一注册
 ├── test/               # vitest
 ├── docs/               # adr/（架构决策记录）+ images/（截图）
 ├── .github/            # 只放执行器：workflows/ + issue/PR 模板
 └── lib/ out/ release/  # 构建产物（不入库）
 ```
 
-第二 Cordis 入口：`package.json` 的 `exports["./webserver"]`（静默 `webServer` 替身）。
+第二 Cordis 入口：`package.json` 的 `exports["./webserver"]`（静默 `webServer` 替身）；浏览器半区入口：`exports["./client"]` + `dsh.client` 声明（闭包工厂 bundle，经 `/plugins/<包名>/client.js` 伺服）。
 
-**新增功能模块**的做法：在 `src/features/<名>/` 建文件夹，实现后在 `src/index.ts` 的 `apply()` 里注册。不建独立插件包、不新增 dsh.bundle 声明。
+**新增功能模块**的做法：在 `src/features/<名>/` 建文件夹（宿主侧导出 `applyXxx(ctx)`，浏览器侧导出 `applyXxxClient(ctx)`），宿主侧在 `src/index.ts` 的 `apply()` 里注册、浏览器侧在 `src/client/index.ts` 里注册。不建独立插件包、不新增 dsh.bundle 声明。
 
 ## 3. 领域速览（dsh 十分钟入门）
 
