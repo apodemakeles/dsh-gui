@@ -9,8 +9,14 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: {
+    index: 'src/index.ts',
+    webserver: 'src/host/webserver.ts',
+  },
   outDir: 'lib',
   format: 'esm',
   dts: true,
+  deps: {
+    neverBundle: ['electron', /^@deepseek-ai\//],
+  },
 })

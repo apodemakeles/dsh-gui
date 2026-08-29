@@ -1,19 +1,19 @@
 /**
- * Renderer entry for the dsh-gui shell. Scaffold stage: placeholder page.
- * Design stage: this hosts the official dsh web client (loaded via file://)
- * with its fetch routed through the IPC carrier installed by the preload.
+ * Renderer entry used only by `pnpm dev` (no host session).
+ * `dsh --profile gui` loads the official web client via the custom protocol.
  */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { APP_NAME, APP_STAGE } from '../../shared/index.ts'
+import { APP_NAME } from '../../shared/index.ts'
 
 function App() {
   return (
-    <main style={{ fontFamily: 'system-ui', padding: 48 }}>
+    <main style={{ fontFamily: 'system-ui', padding: 48, lineHeight: 1.5 }}>
       <h1>{APP_NAME}</h1>
       <p>
-        Shell scaffold ({APP_STAGE} stage). The official dsh web client
-        assembly lands at design stage — see AGENTS.md for the project map.
+        This window is the development placeholder. The official web client
+        is assembled when the host launches the shell:{' '}
+        <code>dsh --profile gui</code>.
       </p>
     </main>
   )
