@@ -25,6 +25,8 @@ dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付
 │   └── features/       # 功能模块：一个子功能一个文件夹（host/client 两侧），由 index.ts 统一注册
 ├── test/               # vitest
 ├── docs/               # adr/（架构决策记录）+ images/（截图）
+├── build/              # 打包资源（icon.icns，入库）
+├── scripts/            # 辅助脚本（package-mac.mjs：staging 隔离打包，见 ADR 0003）
 ├── .github/            # 只放执行器：workflows/ + issue/PR 模板
 └── lib/ out/ release/  # 构建产物（不入库）
 ```
@@ -51,7 +53,7 @@ pnpm dev            # Electron 壳开发（占位窗口，热更新）
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest run
 pnpm build          # electron-vite build（out/）+ tsdown（lib/）
-pnpm package:mac    # 本地未打包 .app（release/，arm64）
+pnpm package:mac    # 本地未打包 .app（release/，arm64）；经 scripts/package-mac.mjs 的仓库外 staging 隔离打包，勿绕过该脚本直接跑 electron-builder（会动 lockfile）
 ```
 
 - bash 涉及外网请求（git clone、下载依赖）前先设代理：

@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { ShellSession } from '../assembly/session.ts'
@@ -22,14 +22,26 @@ export interface IndexRenderer {
 
 /**
  * Write the assembled index and the session JSON the Electron process reads.
+ *
+ * `dirOverride` is the launcher contract: instead of a private mkdtemp the
+ * handshake lands in the caller-provided run directory. session.json is then
+ * published via rename so the polling launcher never reads a half-written
+ * payload.
  */
 export async function writeShellSession(input: {
   dist: DistLayout
   rawIndex: string
   webServer: IndexRenderer
   clientModules: ClientModuleFace
+  dirOverride?: string
 }): Promise<SessionFiles> {
-  const dir = await mkdtemp(join(tmpdir(), 'dsh-gui-'))
+  let dir: string
+  if (input.dirOverride !== undefined && input.dirOverride !== '') {
+    dir = input.dirOverride
+    await mkdir(dir, { recursive: true })
+  } else {
+    dir = await mkdtemp(join(tmpdir(), 'dsh-gui-'))
+  }
   const socketPath = join(dir, 'host.sock')
   const indexPath = join(dir, 'index.html')
   const sessionPath = join(dir, 'session.json')
@@ -48,6 +60,7 @@ export async function writeShellSession(input: {
     indexPath,
     pluginBundles,
   }
-  await writeFile(sessionPath, JSON.stringify(session), 'utf8')
+  await writeFile(sessionPath + '.tmp', JSON.stringify(session), 'utf8')
+  await rename(sessionPath + '.tmp', sessionPath)
   return { dir, sessionPath, socketPath, indexPath }
 }

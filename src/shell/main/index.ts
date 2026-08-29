@@ -1,12 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, BrowserWindow, protocol, shell } from 'electron'
+import { app, BrowserWindow, protocol } from 'electron'
 import {
   parseShellSession,
   SESSION_ENV,
   type ShellSession,
 } from '../../assembly/session.ts'
-import { INDEX_URL, SHELL_SCHEME, APP_NAME } from '../shared/scheme.ts'
+import { SHELL_SCHEME, APP_NAME } from '../shared/scheme.ts'
+import { createClientWindow } from './client-window.ts'
+import { startLauncher } from './launcher.ts'
 import { installShellProtocol } from './protocol.ts'
 
 app.setName(APP_NAME)
@@ -32,20 +34,12 @@ function sessionFromEnv(): ShellSession | undefined {
   return parseShellSession(readFileSync(path, 'utf8'))
 }
 
-function denyWindowOpen(win: BrowserWindow): void {
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
-    return { action: 'deny' }
-  })
-}
-
 function createPlaceholderWindow(): void {
   const win = new BrowserWindow({
     width: 960,
     height: 640,
     title: APP_NAME,
   })
-  denyWindowOpen(win)
   if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
     void win.loadURL(process.env['ELECTRON_RENDERER_URL'])
     return
@@ -53,46 +47,54 @@ function createPlaceholderWindow(): void {
   void win.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
-function createClientWindow(): BrowserWindow {
-  const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    title: APP_NAME,
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
-      contextIsolation: false,
-      sandbox: false,
-      nodeIntegration: false,
-    },
-  })
-  denyWindowOpen(win)
-  void win.loadURL(INDEX_URL)
-  return win
-}
-
 function quitShell(): void {
   app.exit(0)
 }
 
 void app.whenReady().then(() => {
+  // Host-spawned mode (terminal `dsh --profile gui`): the plugin wrote the
+  // session file and passed it via env. Closing the window exits; the host
+  // watches this process and exits with it.
   const session = sessionFromEnv()
-  if (session === undefined) {
-    createPlaceholderWindow()
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createPlaceholderWindow()
+  if (session !== undefined) {
+    installShellProtocol(session)
+    // Unpackaged `Electron.app` otherwise occupies the Dock as a generic
+    // "Electron" tile (and macOS recent-apps may keep it after quit).
+    app.dock?.hide()
+    const win = createClientWindow()
+    win.on('closed', () => {
+      quitShell()
+    })
+    app.on('window-all-closed', () => {
+      quitShell()
     })
     return
   }
-  installShellProtocol(session)
-  // Unpackaged `Electron.app` otherwise occupies the Dock as a generic
-  // "Electron" tile (and macOS recent-apps may keep it after quit).
-  app.dock?.hide()
-  const win = createClientWindow()
-  win.on('closed', () => {
+
+  // Launcher mode (packaged .app double-clicked): spawn the host ourselves,
+  // show a splash, and terminate the host on exit. The dock icon is this
+  // app's own identity.
+  if (app.isPackaged) {
+    if (!app.requestSingleInstanceLock()) {
+      app.exit(0)
+      return
+    }
+    const launcher = startLauncher()
+    app.on('second-instance', () => {
+      launcher.focusMain()
+    })
+    app.on('window-all-closed', () => {
+      void launcher.shutdown()
+    })
+    return
+  }
+
+  // Development placeholder (pnpm dev, no host session).
+  createPlaceholderWindow()
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createPlaceholderWindow()
+  })
+  app.on('window-all-closed', () => {
     quitShell()
   })
-})
-
-app.on('window-all-closed', () => {
-  quitShell()
 })
