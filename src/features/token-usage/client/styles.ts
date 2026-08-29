@@ -1,0 +1,92 @@
+// Scoped stylesheet (prefix td-), injected once into document.head.
+// Follows the shell's dark marker via body[data-ds-dark-theme] (CSS only).
+// Panel geometry is FIXED (width/height) so week/day switching never resizes
+// the popup; inner regions scroll.
+
+export const PANEL_STYLE_ID = 'dsh-token-dashboard-styles'
+
+export const STYLE_TEXT = [
+  ':root {',
+  '  --td-bg: #ffffff; --td-card: #f7f8fa; --td-border: #e6e8ec; --td-text: #1f2430; --td-muted: #71788a;',
+  '  --td-c0: #eef1f4; --td-c1: #c9e6c0; --td-c2: #8fd08a; --td-c3: #4cb155; --td-c4: #2b8a3e; --td-c5: #1b6e2f;',
+  '  --td-accent: #3b82f6; --td-accent-soft: #eaf2fe;',
+  '  --td-shadow: 0 24px 64px rgba(23, 32, 60, 0.18), 0 2px 8px rgba(23, 32, 60, 0.08);',
+  '}',
+  "body[data-ds-dark-theme] {",
+  '  --td-bg: #171a21; --td-card: #1e222b; --td-border: #2a2f3a; --td-text: #e7e9ee; --td-muted: #8b93a5;',
+  '  --td-c0: #242a34; --td-c1: #1d4428; --td-c2: #2a6b33; --td-c3: #3d9b48; --td-c4: #57c163; --td-c5: #7ee787;',
+  '  --td-accent: #4c8dff; --td-accent-soft: #1d2b47;',
+  '  --td-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);',
+  '}',
+  '.td-panel {',
+  '  position: fixed; z-index: 1200; left: 50%; top: 50%; transform: translate(-50%, -50%);',
+  '  width: min(960px, calc(100vw - 56px)); height: min(660px, calc(100vh - 100px));',
+  '  display: flex; flex-direction: column; overflow: hidden;',
+  '  background: var(--td-bg); border: 1px solid var(--td-border); border-radius: 16px;',
+  '  box-shadow: var(--td-shadow); color: var(--td-text); pointer-events: auto;',
+  '  font-family: -apple-system, "PingFang SC", "Segoe UI", sans-serif; font-size: 13px;',
+  '}',
+  '.td-head { display: flex; align-items: center; gap: 16px; padding: 16px 20px 12px; }',
+  '.td-head h2 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: 0.2px; }',
+  '.td-spacer { flex: 1; }',
+  '.td-tabs { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--td-card); border: 1px solid var(--td-border); }',
+  '.td-tabs button { border: 0; background: transparent; color: var(--td-muted); padding: 9px 26px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 9px; transition: color .15s, background .15s, box-shadow .15s; }',
+  '.td-tabs button.on { background: var(--td-accent); color: #fff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35); }',
+  '.td-btn { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; padding: 8px 16px; border: 1px solid var(--td-border); border-radius: 10px; background: var(--td-card); color: var(--td-text); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .05s; }',
+  '.td-btn:hover { border-color: var(--td-accent); box-shadow: 0 1px 6px rgba(59, 130, 246, 0.18); }',
+  '.td-btn:active { transform: translateY(1px); }',
+  '.td-btn:disabled { opacity: .45; cursor: default; box-shadow: none; border-color: var(--td-border); }',
+  '.td-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--td-muted); cursor: pointer; font-size: 15px; transition: background .15s, color .15s; }',
+  '.td-iconbtn:hover { background: var(--td-card); color: var(--td-text); }',
+  '.td-stats { display: flex; gap: 12px; padding: 4px 20px 14px; }',
+  '.td-stat { flex: 1; background: var(--td-card); border: 1px solid var(--td-border); border-radius: 12px; padding: 12px 16px; }',
+  '.td-stat .num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.3px; }',
+  '.td-stat .lbl { font-size: 11px; color: var(--td-muted); margin-top: 2px; }',
+  '.td-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 6px 20px 16px; }',
+  '.td-body-scroll { flex: 1; min-height: 0; overflow: auto; padding-top: 4px; }',
+  '.td-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }',
+  '.td-pager .td-cap { color: var(--td-muted); font-size: 12px; min-width: 130px; text-align: center; }',
+  '.td-grid-wrap { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 6px; overflow: hidden; }',
+  '.td-grid { display: inline-block; }',
+  '.td-months { position: relative; display: block; height: 17px; margin-bottom: 4px; }',
+  '.td-months span { position: absolute; top: 0; font-size: 10.5px; color: var(--td-muted); white-space: nowrap; font-weight: 500; }',
+  '.td-row { display: flex; gap: 6px; margin-bottom: 6px; }',
+  '.td-weekday { width: 28px; font-size: 11px; color: var(--td-muted); text-align: right; padding-right: 8px; line-height: 20px; }',
+  '.td-cell { width: 20px; height: 20px; border-radius: 5px; cursor: pointer; transition: transform .08s; }',
+  '.td-cell:hover { transform: scale(1.18); outline: 1.5px solid var(--td-accent); outline-offset: 1px; }',
+  '.td-legend { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; color: var(--td-muted); margin-top: 14px; }',
+  '.td-legend .td-cell { cursor: default; }',
+  '.td-legend .td-cell:hover { transform: none; outline: none; }',
+  '.td-tip { position: fixed; z-index: 9999; background: rgba(17, 24, 39, 0.96); color: #fff; font-size: 12px; padding: 10px 12px; border-radius: 10px; pointer-events: none; white-space: nowrap; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(6px); }',
+  '.td-tip .big { font-weight: 650; font-size: 12.5px; }',
+  '.td-tip .sub { color: #a8b0c0; font-size: 11px; margin-top: 2px; }',
+  '.td-tip .sub.model { display: flex; justify-content: space-between; gap: 24px; margin-top: 3px; }',
+  '.td-tip .sub.model .name { white-space: nowrap; }',
+  '.td-tip .sub.model .val { color: #d7dce6; font-variant-numeric: tabular-nums; }',
+  '.td-tip .divider { height: 1px; background: rgba(255, 255, 255, 0.12); margin: 5px 0; }',
+  '.td-daywrap { position: relative; height: 100%; display: flex; flex-direction: column; }',
+  '.td-bars { display: flex; align-items: flex-end; gap: 4px; flex: 1; min-height: 0; padding: 8px 18px 0 0; border-bottom: 1px solid var(--td-border); }',
+  '.td-bar { flex: 1; background: var(--td-accent); border-radius: 4px 4px 0 0; min-width: 6px; opacity: .55; cursor: pointer; transition: opacity .12s; }',
+  '.td-bar.empty { background: transparent; cursor: default; opacity: 1; }',
+  '.td-bar:hover { opacity: 1; }',
+  '.td-bar.today { opacity: 1; background: linear-gradient(180deg, var(--td-accent), #2563eb); }',
+  '.td-axis { display: flex; justify-content: space-between; padding: 8px 18px 0 0; font-size: 11px; color: var(--td-muted); }',
+  '.td-status { color: var(--td-muted); padding: 24px 0; text-align: center; }',
+  '.td-foot { display: flex; gap: 18px; flex-wrap: wrap; padding: 10px 20px; border-top: 1px solid var(--td-border); color: var(--td-muted); font-size: 11px; }',
+  '.td-entry { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 4px 10px; background: transparent; border: 0; color: var(--td-muted); cursor: pointer; border-radius: 9px; transition: background .15s, color .15s; }',
+  '.td-entry:hover { background: var(--td-card); }',
+  '.td-entry:has(.td-entry-label) { justify-content: flex-start; }',
+  '.td-entry:not(:has(.td-entry-label)) { width: auto; justify-content: center; }',
+  '.td-entry-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--td-c3); box-shadow: 0 0 6px rgba(61, 155, 72, 0.55); flex: none; }',
+  '.td-entry-label { font-size: 12.5px; color: var(--td-muted); white-space: nowrap; }',
+  '.td-entry-num { font-size: 14px; font-weight: 650; color: var(--td-text); font-variant-numeric: tabular-nums; letter-spacing: .2px; }',
+  '.td-entry-unit { font-size: 10.5px; color: var(--td-muted); opacity: .75; }',
+].join('\n')
+
+export function injectStyles(): void {
+  if (document.getElementById(PANEL_STYLE_ID) !== null) return
+  const style = document.createElement('style')
+  style.id = PANEL_STYLE_ID
+  style.textContent = STYLE_TEXT
+  document.head.appendChild(style)
+}

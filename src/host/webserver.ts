@@ -7,8 +7,10 @@
  *
  * `register` / `registerUpgrade` / `registerFallback` stay on the face because
  * official plugins call them at boot (`connection` mounts `/api` + WebSocket
- * upgrades; `dsh-web-app` mounts frontend-static on the fallback seat). This
- * shell never dispatches those tables — `/api` rides Unix fetch instead.
+ * upgrades; `dsh-web-app` mounts frontend-static on the fallback seat).
+ * Exact routes registered here are dispatched through the Unix fetch carrier
+ * (see assembly/web-route-dispatch.ts) before the composed `/api` handler;
+ * prefix/upgrade/fallback tables stay silent — `/api` rides that composition.
  */
 import { Service, type Context } from '@deepseek-ai/cordis'
 import {
@@ -57,6 +59,11 @@ export class SilentWebServer extends Service {
 
   get host(): '127.0.0.1' {
     return '127.0.0.1'
+  }
+
+  /** Exact-route table, read live per request by the Unix fetch carrier. */
+  exactRoutes(): ReadonlyMap<string, WebRoute> {
+    return this.exact
   }
 
   register(route: WebRoute): () => void {

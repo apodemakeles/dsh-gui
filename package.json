@@ -1,20 +1,32 @@
 {
   "name": "@apodemakeles/dsh-gui",
   "description": "Desktop shell for dsh (DeepSeek Harness): an Electron app delivered as a dsh bundle — booted via `dsh --profile gui`, reusing the official web client over an IPC fetch carrier.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "lib/index.mjs",
+  "bin": {
+    "dsh-gui-token-usage": "lib/cli.js"
+  },
   "exports": {
     ".": "./lib/index.mjs",
     "./webserver": {
       "types": "./lib/webserver.d.mts",
       "default": "./lib/webserver.mjs"
     },
+    "./client": "./lib/client.js",
     "./package.json": "./package.json"
   },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   },
   "scripts": {
@@ -43,7 +55,7 @@
     "url": "git+https://github.com/apodemakeles/dsh-gui.git"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.5.0"
   },
   "packageManager": "pnpm@11.21.0",
   "publishConfig": {
@@ -65,6 +77,13 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-locale": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-runtime": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-session": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-session-persistence": "0.1.1-rc.2",
     "@types/node": "^22.20.0",
     "@types/react": "~18.3.1",
     "@types/react-dom": "^18.3.5",

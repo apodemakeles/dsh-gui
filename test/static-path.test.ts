@@ -2,9 +2,11 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import {
+  combinePluginBundleSources,
   isShellIndexPath,
   resolveDistFile,
   resolvePluginAsset,
+  resolvePluginCombo,
 } from '../src/assembly/static-path.ts'
 
 describe('isShellIndexPath', () => {
@@ -53,5 +55,49 @@ describe('resolvePluginAsset', () => {
 
   it('returns undefined for an unknown plugin id', () => {
     expect(resolvePluginAsset('/plugins/unknown/client.js', bundles)).toBeUndefined()
+  })
+})
+
+describe('resolvePluginCombo', () => {
+  const bundles = new Map([
+    ['dsh-gui', '/pkg/dsh-gui/lib/client.js'],
+    ['@scope/other', '/pkg/other/lib/client.js'],
+  ])
+
+  it('parses a single-entry combo with a rev query', () => {
+    expect(resolvePluginCombo('??dsh-gui/client.js&rev=abc', bundles)).toEqual([
+      '/pkg/dsh-gui/lib/client.js',
+    ])
+  })
+
+  it('parses a multi-entry combo in request order', () => {
+    expect(
+      resolvePluginCombo('??dsh-gui/client.js,@scope/other/client.js&rev=abc', bundles),
+    ).toEqual(['/pkg/dsh-gui/lib/client.js', '/pkg/other/lib/client.js'])
+  })
+
+  it('rejects unknown ids, non-client.js resources, and map combos', () => {
+    expect(resolvePluginCombo('??unknown/client.js&rev=abc', bundles)).toBeUndefined()
+    expect(resolvePluginCombo('??dsh-gui/client.js.map&rev=abc', bundles)).toBeUndefined()
+    expect(resolvePluginCombo('??dsh-gui/other.js&rev=abc', bundles)).toBeUndefined()
+  })
+
+  it('rejects malformed search strings', () => {
+    expect(resolvePluginCombo('', bundles)).toBeUndefined()
+    expect(resolvePluginCombo('??', bundles)).toBeUndefined()
+    expect(resolvePluginCombo('?q=1', bundles)).toBeUndefined()
+  })
+})
+
+describe('combinePluginBundleSources', () => {
+  it('strips sourceMappingURL trailers and separates bundles with a semicolon', () => {
+    const combined = combinePluginBundleSources([
+      'window.__ModuleLoader__.load({ id: "a" })\n//# sourceMappingURL=client.js.map',
+      "var x = 'b'",
+    ])
+    expect(combined).toBe(
+      'window.__ModuleLoader__.load({ id: "a" })\n;\nvar x = \'b\'\n',
+    )
+    expect(combined).not.toContain('sourceMappingURL')
   })
 })

@@ -4,9 +4,16 @@
 
 > [dsh](https://github.com/deepseek-ai/deepseek-harness)（DeepSeek Harness）的桌面壳：以 dsh 插件（bundle）身份交付的 Electron 应用。`dsh --profile gui` 一键拉起——复用官方 web client、经 IPC fetch carrier 通信，不重造 harness 功能。
 
-**当前状态：壳装配已落地。** `dsh --profile gui` 拉起 Electron，用自定义协议（`dsh-gui://`，不开 TCP 端口）加载官方 web client，请求经 IPC/Unix socket carrier 回宿主。`pnpm dev` 仍是占位窗口：引导图和 `apiProxy` 只存在于活的宿主进程里。
+**当前状态：壳装配已落地，首个功能模块（token 消耗）已内置。** `dsh --profile gui` 拉起 Electron，用自定义协议（`dsh-gui://`，不开 TCP 端口）加载官方 web client，请求经 IPC/Unix socket carrier 回宿主。侧栏底部的 "usage" 入口打开 token 消耗面板（今日/本周/近 30 天/总量 + GitHub 风格周热力图 + 按模型 Top3）。`pnpm dev` 仍是占位窗口：引导图和 `apiProxy` 只存在于活的宿主进程里。
 
 ![dsh-gui 会话](docs/images/session.png)
+
+## token 消耗面板
+
+数据链与独立插件 [dsh-token-dashboard](https://github.com/apodemakeles/dsh-token-dashboard) 一致：宿主监听会话事件、Worker 线程独占 SQLite 投影（`$DSH_HOME/data/token-dashboard/usage-v1.sqlite`），面板只读一个 snapshot 端点；权威数据始终是 `~/.dsh/sessions`，库可随时重建。
+
+- **历史数据连续**：沿用同一个库文件，原插件的统计直接延续；插件不在场期间（如仅 CLI/gui 使用）产生的会话，下次启动会自动从会话日志补投影。
+- 维护 CLI：`dsh-gui-token-usage status | verify | rebuild | backups | restore | cleanup`（写操作需精确名 + `--yes`）。
 
 ## 安装（目标用法）
 
@@ -21,7 +28,7 @@ dsh --profile gui
 
 ## 开发
 
-- Node `>= 20`，pnpm（版本已通过 `packageManager` 锁定）。
+- Node `>= 22.5`（`node:sqlite`），pnpm（版本已通过 `packageManager` 锁定）。
 
 ```sh
 pnpm install        # 同时执行 prepare → build（electron-vite + tsdown）

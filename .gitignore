@@ -31,3 +31,4 @@ dev-app-update.yml
 .DS_Store
 Thumbs.db
 .idea/
+.zcode/

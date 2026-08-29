@@ -4,9 +4,16 @@ English | [中文](README.zh.md)
 
 > Desktop shell for [dsh](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness): an Electron app delivered as a dsh bundle. Boot it with `dsh --profile gui` — it reuses the official dsh web client over an IPC fetch carrier instead of reimplementing harness features.
 
-**Status: shell assembly.** `dsh --profile gui` launches Electron, loads the official web client over a custom protocol (`dsh-gui://`, no TCP port), and carries fetch over an IPC/unix-socket carrier. `pnpm dev` still opens a placeholder window because boot graph and `apiProxy` only exist inside a live host.
+**Status: shell assembly plus the first built-in feature module (token usage).** `dsh --profile gui` launches Electron, loads the official web client over a custom protocol (`dsh-gui://`, no TCP port), and carries fetch over an IPC/unix-socket carrier. The "usage" entry at the bottom of the sidebar opens the token-consumption panel (today/week/30-day/all-time totals + a GitHub-style weekly heatmap + per-model top 3). `pnpm dev` still opens a placeholder window because boot graph and `apiProxy` only exist inside a live host.
 
 ![dsh-gui session](docs/images/session.png)
+
+## Token usage panel
+
+The data pipeline matches the standalone [dsh-token-dashboard](https://github.com/apodemakeles/dsh-token-dashboard) plugin: the host watches session events, a dedicated worker thread owns the SQLite projection (`$DSH_HOME/data/token-dashboard/usage-v1.sqlite`), and the panel reads a single snapshot endpoint; `~/.dsh/sessions` stays the source of truth and the store is rebuildable at any time.
+
+- **History carries over**: the same store file continues where the old plugin left off, and sessions created while no collector was running (CLI/gui-only usage) are back-filled from the session logs on the next boot.
+- Maintenance CLI: `dsh-gui-token-usage status | verify | rebuild | backups | restore | cleanup` (writes require the exact name plus `--yes`).
 
 ## Install (target usage)
 
@@ -21,7 +28,7 @@ Because the shell ships Electron as a runtime dependency, pnpm will ask you to a
 
 ## Development
 
-- Node `>= 20`, pnpm (the version is pinned via `packageManager`).
+- Node `>= 22.5` (`node:sqlite`), pnpm (the version is pinned via `packageManager`).
 
 ```sh
 pnpm install        # also runs prepare → build (electron-vite + tsdown)
