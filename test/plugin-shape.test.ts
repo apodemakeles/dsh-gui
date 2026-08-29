@@ -1,13 +1,30 @@
+// Plugin shape contract: the single bundle entry (host) plus its composed
+// client half, and the token-usage worker entry.
 import { describe, expect, it } from 'vitest'
-import * as plugin from '../src/index.ts'
+import * as host from '../src/index.ts'
+import * as client from '../src/client/index.ts'
+import { UsageWorker } from '../src/features/token-usage/host/usage-worker.ts'
 
-describe('plugin shape', () => {
-  it('exports a cordis-style plugin (name + apply)', () => {
-    expect(plugin.name).toBe('dsh-gui')
-    expect(typeof plugin.apply).toBe('function')
+describe('dual-face plugin shape', () => {
+  it('host half declares the shell + token-usage services and exports apply', () => {
+    expect(host.name).toBe('dsh-gui')
+    expect(host.inject).toEqual([
+      'apiProxy',
+      'clientModules',
+      'webServer',
+      'connection',
+      'sessions',
+      'sessionPersistence',
+    ])
+    expect(typeof host.apply).toBe('function')
   })
 
-  it('waits for the web-surface services the shell forwards over IPC', () => {
-    expect(plugin.inject).toEqual(['apiProxy', 'clientModules', 'webServer', 'connection'])
+  it('client half declares slots + locale and exports apply', () => {
+    expect(client.inject).toEqual(['slots', 'locale'])
+    expect(typeof client.apply).toBe('function')
+  })
+
+  it('durable worker entry exports the command loop', () => {
+    expect(typeof UsageWorker).toBe('function')
   })
 })
