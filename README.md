@@ -4,9 +4,9 @@ English | [中文](README.zh.md)
 
 > Desktop shell for [dsh](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness): an Electron app delivered as a dsh bundle. Boot it with `dsh --profile gui` — it reuses the official dsh web client over an IPC fetch carrier instead of reimplementing harness features.
 
-**Status: scaffolding.** The repository skeleton, build chain and CI are in place; the Electron shell assembly (web-client loading, IPC fetch carrier, plugin bootstrap) is the next development stage. Everything below under "Install" describes the target usage.
+**Status: shell assembly.** `dsh --profile gui` launches Electron, loads the official web client over a custom protocol (`dsh-gui://`, no TCP port), and carries fetch over an IPC/unix-socket carrier. `pnpm dev` still opens a placeholder window because boot graph and `apiProxy` only exist inside a live host.
 
-<!-- Screenshots land in docs/images/ once the shell renders the web client. -->
+![dsh-gui session](docs/images/session.png)
 
 ## Install (target usage)
 
@@ -25,7 +25,7 @@ Because the shell ships Electron as a runtime dependency, pnpm will ask you to a
 
 ```sh
 pnpm install        # also runs prepare → build (electron-vite + tsdown)
-pnpm dev            # placeholder window (web-client assembly lands at design stage)
+pnpm dev            # placeholder window (the real client needs `dsh --profile gui`)
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest
 pnpm build          # electron-vite build (out/) + tsdown (lib/)

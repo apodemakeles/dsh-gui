@@ -8,7 +8,7 @@
 ## 日常命令
 
 ```sh
-pnpm dev          # 起 Electron 壳（当前为占位窗口）
+pnpm dev          # 起 Electron 占位窗口（真实 client 用 dsh --profile gui）
 pnpm typecheck    # 类型检查
 pnpm test         # vitest 测试
 pnpm build        # 全量构建（壳 out/ + 插件 lib/）

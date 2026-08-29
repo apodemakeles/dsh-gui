@@ -4,9 +4,9 @@
 
 > [dsh](https://github.com/deepseek-ai/deepseek-harness)（DeepSeek Harness）的桌面壳：以 dsh 插件（bundle）身份交付的 Electron 应用。`dsh --profile gui` 一键拉起——复用官方 web client、经 IPC fetch carrier 通信，不重造 harness 功能。
 
-**当前状态：脚手架。** 仓库骨架、构建链与 CI 已就位；Electron 壳的装配（web client 加载、IPC fetch carrier、插件引导）是下一个开发阶段。下面「安装」一节描述的是目标用法。
+**当前状态：壳装配已落地。** `dsh --profile gui` 拉起 Electron，用自定义协议（`dsh-gui://`，不开 TCP 端口）加载官方 web client，请求经 IPC/Unix socket carrier 回宿主。`pnpm dev` 仍是占位窗口：引导图和 `apiProxy` 只存在于活的宿主进程里。
 
-<!-- 壳渲染出 web client 后，截图放 docs/images/。 -->
+![dsh-gui 会话](docs/images/session.png)
 
 ## 安装（目标用法）
 
@@ -25,7 +25,7 @@ dsh --profile gui
 
 ```sh
 pnpm install        # 同时执行 prepare → build（electron-vite + tsdown）
-pnpm dev            # 占位窗口（web client 装配在设计阶段落地）
+pnpm dev            # 占位窗口（真实 web client 需要 `dsh --profile gui`）
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest
 pnpm build          # electron-vite build（out/）+ tsdown（lib/）
