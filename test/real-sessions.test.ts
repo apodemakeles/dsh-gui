@@ -59,8 +59,7 @@ function naiveLastWins(events: RawLine[]): Map<string, { inT: number; out: numbe
     const step = data.step
     if (turn === undefined || step === undefined) continue
     let usage: { inputTokens?: number; outputTokens?: number; cacheReadTokens?: number } | undefined
-    if (event.type === 'assistant/chunk' && data.chunk?.type === 'usage') usage = data.chunk.usage
-    else if (event.type === 'assistant/message' && data.usage !== undefined) usage = data.usage
+    if (event.type === 'assistant/message' && data.usage !== undefined) usage = data.usage
     else continue
     if (usage === undefined) continue
     byStep.set(turn + ':' + step, {

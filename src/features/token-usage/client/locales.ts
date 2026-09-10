@@ -2,12 +2,6 @@
 // shared locale service under namespace 'token-dashboard' (05 decision:
 // bilingual UI).
 
-declare module '@deepseek-ai/dsh-client-ui-slots' {
-  interface LocaleNamespaceMap {
-    'token-dashboard': TokenKey
-  }
-}
-
 export type TokenKey =
   | 'title'
   | 'today'

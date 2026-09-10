@@ -1,6 +1,8 @@
 // Commit 1 gate: shared contract + pure projector.
-// Covers route cursor, chunk/message last-wins, invalid event isolation,
-// continuous seq/gap and Token safe integers.
+// Covers route cursor, message last-wins, invalid event isolation,
+// continuous seq/gap and Token safe integers. Event fixtures follow the
+// dsh 0.1.5 V3 log (usage rides assistant/message only); the raw `final:
+// false` delta cases below stay as pure-logic tests of seq-ordered last-wins.
 import { describe, expect, it } from 'vitest'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { IngestionCodes } from '../src/features/token-usage/durable/contracts.ts'
@@ -14,9 +16,6 @@ import {
   projectDeltas,
 } from '../src/features/token-usage/durable/projector.ts'
 
-function chunk(turn: number, step: number, seq: number, time: number, input: number, output: number, cacheRead = 0): SessionEvent {
-  return { type: 'assistant/chunk', seq, time, data: { turn, step, chunk: { type: 'usage', usage: { inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead } } } } as SessionEvent
-}
 function message(turn: number, step: number, seq: number, time: number, input: number, output: number, cacheRead = 0): SessionEvent {
   return { type: 'assistant/message', seq, time, data: { turn, step, message: {}, usage: { inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead } } } as unknown as SessionEvent
 }
@@ -50,14 +49,12 @@ describe('normalizeEventDelta', () => {
     const events = [
       noise(0, 0),
       header(1, 1, 'opencode', 'deepseek-v4-pro'),
-      chunk(2, 2, 2, 10, 10, 5),
-      message(2, 2, 3, 11, 10, 5),
+      message(2, 2, 2, 10, 10, 5),
     ]
     const deltas = normalizeEventDeltas(events)
-    expect(deltas).toHaveLength(3)
+    expect(deltas).toHaveLength(2)
     expect(deltas[0]).toMatchObject({ kind: 'route', provider: 'opencode', model: 'deepseek-v4-pro' })
-    expect(deltas[1]).toMatchObject({ kind: 'usage', turn: 2, step: 2, final: false })
-    expect(deltas[2]).toMatchObject({ kind: 'usage', turn: 2, step: 2, final: true })
+    expect(deltas[1]).toMatchObject({ kind: 'usage', turn: 2, step: 2, final: true })
     expect(JSON.stringify(deltas)).not.toContain('message')
   })
 })
@@ -66,7 +63,7 @@ describe('projectBatch', () => {
   it('tracks route cursor across restart boundaries', () => {
     const events = [
       header(0, 0, 'opencode', 'deepseek-v4-pro'),
-      chunk(1, 1, 1, 10, 10, 5),
+      message(1, 1, 1, 10, 10, 5),
       context(2, 2, 'opencode', 'deepseek-v4-flash'),
       message(2, 1, 3, 11, 10, 5),
     ]

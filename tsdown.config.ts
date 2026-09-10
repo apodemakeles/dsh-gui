@@ -19,16 +19,14 @@ import { defineConfig } from 'tsdown'
 
 // Client-half platform modules: the specifiers the web shell shares into the
 // frozen module table. They stay external and resolve at factory-run time
-// through the require() the module loader injects. Trimmed to what this
-// bundle's client code actually imports (react + the slot/locale runtime).
+// through the require() the module loader injects. The dsh client packages
+// this bundle used to list are gone since 0.1.5 — its dsh imports are types
+// only (src/client/client-context.ts) and erase at build.
 const CLIENT_EXTERNALS = [
   'react',
   'react/jsx-runtime',
   'react-dom',
   'react-dom/client',
-  '@deepseek-ai/cordis',
-  '@deepseek-ai/dsh-client-ui-slots',
-  '@deepseek-ai/dsh-client-runtime/client',
 ] as const
 
 export default defineConfig([

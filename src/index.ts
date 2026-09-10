@@ -8,7 +8,6 @@
 import { readFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
-import { toFetchHandler, type ApiProxy } from '@deepseek-ai/dsh-host-apiproxy'
 import { listenFetchOnUnixSocket } from './assembly/unix-http.ts'
 import { dispatchExactWebRoute, type ExactRouteSource } from './assembly/web-route-dispatch.ts'
 import { resolveWebClientDist } from './assembly/web-client-dist.ts'
@@ -22,18 +21,16 @@ import { spawnElectronShell } from './host/spawn-shell.ts'
 type FetchFace = { fetch(request: Request): Promise<Response> }
 
 type GuiContext = Context & {
-  apiProxy: ApiProxy
   webServer: IndexRenderer & ExactRouteSource
   clientModules: ClientModuleFace
   connection: {
-    createSharedFetchHandler(channel: '/api', fallback: FetchFace): FetchFace
+    createSharedFetchHandler(channel: '/api'): FetchFace
   }
 }
 
 export const name = 'dsh-gui'
 
 export const inject = [
-  'apiProxy',
   'clientModules',
   'webServer',
   'connection',
@@ -47,7 +44,6 @@ export function apply(ctx: GuiContext): void {
   // token-usage snapshot) are in the webServer table before the carrier
   // starts dispatching below.
   applyTokenUsage(ctx)
-
   // Launcher mode (packaged .app): the shell is already running and spawned
   // this host, so skip our own Electron and publish the handshake where the
   // launcher told us to.
@@ -63,19 +59,14 @@ export function apply(ctx: GuiContext): void {
     clientModules: ctx.clientModules,
     dirOverride: externalDir,
   }).then(async (files) => {
-    // Typert remotes (pluginInventory/list, …) ride connection's /api
-    // interceptor. Unary session RPC and SSE downlinks (events.mux / events.host)
-    // stay on toFetchHandler — connection's HTTP route answers those GETs with
-    // 426 because the browser carrier uses WebSocket, which this shell does not.
-    // Feature exact routes (official precedence: exact beats the /api prefix)
-    // dispatch first through the webServer's table.
-    const handler = ctx.connection.createSharedFetchHandler(
-      '/api',
-      toFetchHandler(ctx.apiProxy),
-    )
+    // Since dsh 0.1.5, Connection composes the shared /api RPC handler itself;
+    // createSharedFetchHandler no longer takes a fetch fallback. Feature exact
+    // routes (the token-usage snapshot) still live on the webServer's table and
+    // dispatch first — official precedence: exact beats the /api channel.
+    const rpc = ctx.connection.createSharedFetchHandler('/api')
     const server = await listenFetchOnUnixSocket(files.socketPath, async (request) => {
       const routed = await dispatchExactWebRoute(ctx.webServer, request)
-      return routed ?? handler.fetch(request)
+      return routed ?? rpc.fetch(request)
     })
     let hostDisposed = false
     const stop = () => {

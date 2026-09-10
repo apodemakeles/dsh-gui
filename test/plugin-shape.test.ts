@@ -8,8 +8,9 @@ import { UsageWorker } from '../src/features/token-usage/host/usage-worker.ts'
 describe('dual-face plugin shape', () => {
   it('host half declares the shell + token-usage services and exports apply', () => {
     expect(host.name).toBe('dsh-gui')
+    // Since dsh 0.1.5 the /api composition lives inside Connection; the
+    // apiProxy injection is gone from the carrier path.
     expect(host.inject).toEqual([
-      'apiProxy',
       'clientModules',
       'webServer',
       'connection',

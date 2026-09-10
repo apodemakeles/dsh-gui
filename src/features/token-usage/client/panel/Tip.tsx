@@ -9,7 +9,8 @@
 
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import type { TokenKey } from '../locales.ts'
+import type { PropsLocale } from '../../../../client/client-context.ts'
 import type { TokenDayBucket } from '../../core/types.ts'
 import { fmt } from '../fmt.ts'
 
@@ -44,7 +45,7 @@ export function Tip({ x, y, children }: TipProps) {
 }
 
 /** Tooltip body: date + total, per-model top-3 + others, request count. */
-export function DayTipContent({ day, t }: { day: TokenDayBucket } & PropsLocale<'token-dashboard'>) {
+export function DayTipContent({ day, t }: { day: TokenDayBucket } & PropsLocale<TokenKey>) {
   const models = day.byModel ?? []
   const top = models.slice(0, TOP_MODELS)
   const restTokens = models.slice(TOP_MODELS).reduce((sum, entry) => sum + entry.tokens, 0)

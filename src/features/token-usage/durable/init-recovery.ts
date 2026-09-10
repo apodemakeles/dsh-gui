@@ -1,8 +1,8 @@
 // InitRecoveryCoordinator — background initialization and crash-tail recovery.
 //
-// It uses only the DSH persistence seam (listSnapshots/readFrom) plus the
-// collector and Worker client. It never touches physical JSONL/Zstd paths and
-// never runs on the panel request path.
+// It uses only the DSH persistence seam (list + open/read handles, the dsh
+// 0.1.5 SessionHandle face) plus the collector and Worker client. It never
+// touches physical JSONL/Zstd paths and never runs on the panel request path.
 
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ProjectionBatch, LifecycleIdentity } from './contracts.ts'
@@ -11,10 +11,14 @@ import type { SqliteUsageStore } from './sqlite-store.ts'
 import type { UsageCollector } from './collector.ts'
 import type { UsageWorkerClient } from './worker-client.ts'
 
-/** Minimal persistence seam shape sufficient for init/recovery. */
+/** Minimal persistence seam shape sufficient for init/recovery (the dsh 0.1.5
+ * SessionPersistence face: metadata listing plus owned read handles). */
 export interface PersistenceLike {
-  listSnapshots(signal?: AbortSignal): Promise<Array<{ header: { id: string; createdAt?: number; cwd?: string }; revision: unknown }>>
-  readFrom(id: string, fromSeq: number, signal?: AbortSignal): Promise<{ meta: { id: string; createdAt?: number; cwd?: string }; events: SessionEvent[] }>
+  list(options?: { signal?: AbortSignal }): Promise<ReadonlyArray<{ header: { id: string; createdAt?: number; cwd?: string }; revision: unknown }>>
+  open(id: string, access: 'read', options?: { signal?: AbortSignal }): Promise<{
+    read(offset?: number, length?: number, options?: { signal?: AbortSignal }): Promise<{ events: readonly SessionEvent[] }>
+    close(): Promise<void>
+  }>
 }
 
 export interface CoordinatorStore {
@@ -111,7 +115,7 @@ export class InitRecoveryCoordinator {
   private aborted = false
   private started = false
   private armed = false
-  private snapshots: Array<{ header: { id: string; createdAt?: number; cwd?: string }; revision: unknown }> = []
+  private snapshots: ReadonlyArray<{ header: { id: string; createdAt?: number; cwd?: string }; revision: unknown }> = []
   private previousState: 'arming' | 'active' | 'clean' | undefined
   private previousEpochId: number | undefined
 
@@ -147,7 +151,7 @@ export class InitRecoveryCoordinator {
     this.previousEpochId = previous?.epochId
     const startedAtMs = this.now()
     const epochId = await this.store.beginRunEpoch(startedAtMs)
-    const snapshots = await this.persistence.listSnapshots(this.signal)
+    const snapshots = await this.persistence.list({ signal: this.signal })
     this.snapshots = snapshots
     const baselines: Array<{ lifecyclePk: number; sourceRevision: string }> = []
     for (const snapshot of snapshots) {
@@ -222,7 +226,7 @@ export class InitRecoveryCoordinator {
     }
 
     // Final sweep: discover sessions created after the initial enumeration.
-    const finalSnapshots = await this.persistence.listSnapshots(this.signal)
+    const finalSnapshots = await this.persistence.list({ signal: this.signal })
     for (const snapshot of finalSnapshots) {
       if (this.aborted) return
       if (failedIds.has(snapshot.header.id)) continue
@@ -353,44 +357,51 @@ export class InitRecoveryCoordinator {
     const lifecyclePk = await this.store.upsertLifecycle(identity)
     let cursor = fromSeq
     let index = 0
-    while (!this.aborted) {
-      const read = await this.persistence.readFrom(identity.sessionId, cursor, this.signal)
-      if (read.events.length === 0) {
-        if (bootstrap) {
+    // One read handle per lifecycle: the 0.1.5 persistence hands out owned
+    // SessionHandle reads, so the scan loop opens once and slices by offset.
+    const handle = await this.persistence.open(identity.sessionId, 'read', { signal: this.signal })
+    try {
+      while (!this.aborted) {
+        const read = await handle.read(cursor, undefined, { signal: this.signal })
+        if (read.events.length === 0) {
+          if (bootstrap) {
+            await this.store.projectBatch({
+              batchId: this.generation + ':bootstrap:' + identity.sessionId + ':' + cursor,
+              hostGeneration: this.generation,
+              lifecycle: identity,
+              fromSeq: cursor,
+              toSeq: cursor - 1,
+              deltas: [],
+              sourceRevision: String(snapshot.revision),
+              bootstrapComplete: true,
+            })
+          }
+          return true
+        }
+        for (let offset = 0; offset < read.events.length; offset += this.yieldEvery) {
+          if (this.aborted) return false
+          const chunk = read.events.slice(offset, offset + this.yieldEvery)
+          const first = chunk[0]!
+          const last = chunk[chunk.length - 1]!
+          const isLastChunk = offset + chunk.length >= read.events.length
           await this.store.projectBatch({
-            batchId: this.generation + ':bootstrap:' + identity.sessionId + ':' + cursor,
+            batchId: this.generation + ':scan:' + identity.sessionId + ':' + first.seq + '-' + last.seq,
             hostGeneration: this.generation,
             lifecycle: identity,
-            fromSeq: cursor,
-            toSeq: cursor - 1,
-            deltas: [],
-            sourceRevision: String(snapshot.revision),
-            bootstrapComplete: true,
+            fromSeq: first.seq,
+            toSeq: last.seq,
+            deltas: normalizeEventDeltas(chunk),
+            sourceRevision: isLastChunk && bootstrap ? String(snapshot.revision) : undefined,
+            bootstrapComplete: isLastChunk && bootstrap,
           })
+          cursor = last.seq + 1
+          await new Promise((resolve) => setImmediate(resolve))
         }
-        return true
       }
-      for (let offset = 0; offset < read.events.length; offset += this.yieldEvery) {
-        if (this.aborted) return false
-        const chunk = read.events.slice(offset, offset + this.yieldEvery)
-        const first = chunk[0]!
-        const last = chunk[chunk.length - 1]!
-        const isLastChunk = offset + chunk.length >= read.events.length
-        await this.store.projectBatch({
-          batchId: this.generation + ':scan:' + identity.sessionId + ':' + first.seq + '-' + last.seq,
-          hostGeneration: this.generation,
-          lifecycle: identity,
-          fromSeq: first.seq,
-          toSeq: last.seq,
-          deltas: normalizeEventDeltas(chunk),
-          sourceRevision: isLastChunk && bootstrap ? String(snapshot.revision) : undefined,
-          bootstrapComplete: isLastChunk && bootstrap,
-        })
-        cursor = last.seq + 1
-        await new Promise((resolve) => setImmediate(resolve))
-      }
+      return false
+    } finally {
+      await handle.close().catch(() => undefined)
     }
-    return false
   }
 
 }

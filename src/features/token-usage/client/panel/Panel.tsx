@@ -6,7 +6,8 @@
 
 import { Component, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import type { TokenKey } from '../locales.ts'
+import type { PropsLocale } from '../../../../client/client-context.ts'
 import type { SnapshotV1 } from '../../durable/contracts.ts'
 import { fetchSnapshot } from '../snapshot.ts'
 import { fmt } from '../fmt.ts'
@@ -19,7 +20,7 @@ const WEEKS = 26
 
 type View = 'week' | 'day'
 
-export interface PanelProps extends PropsLocale<'token-dashboard'> {}
+export interface PanelProps extends PropsLocale<TokenKey> {}
 
 /** Contains any render error inside the panel: the slot entry must survive
  *  bad host data instead of unmounting the whole plugin surface. */

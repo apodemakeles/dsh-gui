@@ -23,16 +23,18 @@ function usageMessage(seq: number, turn = 1, step = 1, input = 10, output = 5): 
 
 function fakePersistence(sessions: Map<string, { revision: string; events: SessionEvent[] }>): PersistenceLike {
   return {
-    async listSnapshots() {
+    async list() {
       return [...sessions.entries()].map(([id, value]) => ({
         header: { id, createdAt: 1000, cwd: '/tmp/project' },
         revision: value.revision,
       }))
     },
-    async readFrom(id: string, fromSeq: number) {
+    async open(id: string) {
       return {
-        meta: { id, createdAt: 1000, cwd: '/tmp/project' },
-        events: (sessions.get(id)?.events ?? []).filter((event) => event.seq >= fromSeq),
+        async read(fromSeq: number) {
+          return { events: (sessions.get(id)?.events ?? []).filter((event) => event.seq >= (fromSeq ?? 0)) }
+        },
+        async close() {},
       }
     },
   }
@@ -122,10 +124,10 @@ describe('InitRecoveryCoordinator', () => {
       ['s1', { revision: 'r1', events: [usageMessage(0)] }],
     ])
     const persistence: PersistenceLike = {
-      async listSnapshots() {
+      async list() {
         return [{ header: { id: 's1', createdAt: 1000, cwd: '/tmp/project' }, revision: 'r1' }]
       },
-      async readFrom() {
+      async open() {
         throw new Error('boom')
       },
     }
@@ -148,17 +150,19 @@ describe('InitRecoveryCoordinator', () => {
     ])
     const reads = new Map<string, number>()
     const persistence: PersistenceLike = {
-      async listSnapshots() {
+      async list() {
         return [...sessions.entries()].map(([id, value]) => ({
           header: { id, createdAt: 1000, cwd: '/tmp/project' },
           revision: value.revision,
         }))
       },
-      async readFrom(id: string, fromSeq: number) {
-        reads.set(id, (reads.get(id) ?? 0) + 1)
+      async open(id: string) {
         return {
-          meta: { id, createdAt: 1000, cwd: '/tmp/project' },
-          events: (sessions.get(id)?.events ?? []).filter((event) => event.seq >= fromSeq),
+          async read(fromSeq: number) {
+            reads.set(id, (reads.get(id) ?? 0) + 1)
+            return { events: (sessions.get(id)?.events ?? []).filter((event) => event.seq >= (fromSeq ?? 0)) }
+          },
+          async close() {},
         }
       },
     }

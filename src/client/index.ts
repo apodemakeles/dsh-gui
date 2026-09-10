@@ -4,8 +4,7 @@
  * /plugins/dsh-gui/client.js). Adding a feature means adding its client
  * registration here — never a second dsh.client declaration.
  */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-import type {} from '@deepseek-ai/dsh-client-ui-slots'
+import type { ClientContext } from './client-context.ts'
 import { applyTokenUsageClient } from '../features/token-usage/client/index.ts'
 
 /** Required client services: the slot registry and the locale dictionary. */
