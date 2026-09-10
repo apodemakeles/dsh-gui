@@ -31,7 +31,15 @@ export async function dispatchExactWebRoute(
   return runNodeStyleHandler(route, request)
 }
 
-async function runNodeStyleHandler(route: WebRoute, request: Request): Promise<Response> {
+/**
+ * Run one node-style handler against a Fetch request (shared by exact routes
+ * and the connection authorizer). The handler may leave the response unwritten
+ * when it reports success through its return value instead.
+ */
+export async function callNodeStyleHandler(
+  handler: (req: IncomingMessage, res: ServerResponse) => void | Promise<void>,
+  request: Request,
+): Promise<Response> {
   const capture = new ResponseCapture()
   const body =
     request.method === 'GET' || request.method === 'HEAD' || request.body === null
@@ -43,12 +51,16 @@ async function runNodeStyleHandler(route: WebRoute, request: Request): Promise<R
     headers: Object.fromEntries(request.headers),
   }) as unknown as IncomingMessage
   try {
-    await route.handler(req, capture.asServerResponse())
+    await handler(req, capture.asServerResponse())
   } catch (error) {
-    console.error(`dsh-gui: web route handler for "${route.path}" failed`, error)
+    console.error('dsh-gui: node-style handler failed', error)
     return new Response('internal error', { status: 500 })
   }
   return capture.toResponse()
+}
+
+async function runNodeStyleHandler(route: WebRoute, request: Request): Promise<Response> {
+  return callNodeStyleHandler((req, res) => route.handler(req, res), request)
 }
 
 /**

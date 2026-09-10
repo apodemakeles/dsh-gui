@@ -66,6 +66,11 @@ export class SilentWebServer extends Service {
     return this.exact
   }
 
+  /** Upgrade routes (the remote-event mux), dispatched by the Unix carrier. */
+  upgradeRoutes(): ReadonlyMap<string, WebUpgradeRoute> {
+    return this.upgrades
+  }
+
   register(route: WebRoute): () => void {
     const table = route.kind === 'exact' ? this.exact : this.prefixes
     if (table.has(route.path)) {

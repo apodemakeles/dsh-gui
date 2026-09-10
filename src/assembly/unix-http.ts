@@ -10,7 +10,7 @@ import {
   type ClientRequest,
   request as httpRequest,
 } from 'node:http'
-import { Readable, type Writable } from 'node:stream'
+import { Readable, type Writable, type Duplex } from 'node:stream'
 import { existsSync } from 'node:fs'
 import { unlink } from 'node:fs/promises'
 
@@ -18,12 +18,25 @@ const INTERNAL_ORIGIN = 'http://127.0.0.1'
 
 export type FetchHandler = (request: Request) => Promise<Response>
 
+/** WebSocket-style upgrade dispatcher: the route owns the raw duplex socket. */
+export type UpgradeHandler = (
+  req: IncomingMessage,
+  socket: Duplex,
+  head: Buffer,
+) => void
+
 async function bindUnixServer(
   socketPath: string,
   onRequest: (req: IncomingMessage, res: ServerResponse) => void,
+  onUpgrade?: UpgradeHandler,
 ): Promise<Server> {
   if (existsSync(socketPath)) await unlink(socketPath)
   const server = createServer(onRequest)
+  if (onUpgrade !== undefined) {
+    server.on('upgrade', (req, socket, head) => {
+      onUpgrade(req, socket as unknown as Duplex, head)
+    })
+  }
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
     server.listen({ path: socketPath }, () => {
@@ -36,15 +49,17 @@ async function bindUnixServer(
 
 /**
  * Serve a WHATWG fetch handler on `socketPath`. Replaces a stale socket file.
- * The returned server is already listening.
+ * `onUpgrade`, when given, receives WebSocket-style upgrades (the remote-event
+ * mux). The returned server is already listening.
  */
 export async function listenFetchOnUnixSocket(
   socketPath: string,
   fetchImpl: FetchHandler,
+  onUpgrade?: UpgradeHandler,
 ): Promise<Server> {
   return bindUnixServer(socketPath, (req, res) => {
     void dispatch(req, res, fetchImpl)
-  })
+  }, onUpgrade)
 }
 
 async function dispatch(

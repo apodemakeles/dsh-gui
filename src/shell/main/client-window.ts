@@ -3,7 +3,7 @@
 
 import { join } from 'node:path'
 import { BrowserWindow, shell } from 'electron'
-import { INDEX_URL, APP_NAME } from '../shared/scheme.ts'
+import { clientUrlFor, APP_NAME } from '../shared/scheme.ts'
 
 export function denyWindowOpen(win: BrowserWindow): void {
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -12,7 +12,10 @@ export function denyWindowOpen(win: BrowserWindow): void {
   })
 }
 
-export function createClientWindow(): BrowserWindow {
+/** `surfacePort` — the loopback HTTP surface port; the page origin must
+ * carry it so the gateway's `ws://` remote-event mux dials the surface.
+ * `authToken` rides the first navigation to mint the browser-auth cookie. */
+export function createClientWindow(surfacePort: number, authToken: string): BrowserWindow {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -25,6 +28,6 @@ export function createClientWindow(): BrowserWindow {
     },
   })
   denyWindowOpen(win)
-  void win.loadURL(INDEX_URL)
+  void win.loadURL(clientUrlFor(surfacePort, authToken))
   return win
 }

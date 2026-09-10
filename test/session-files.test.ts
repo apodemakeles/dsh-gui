@@ -26,6 +26,7 @@ describe('writeShellSession', () => {
         renderIndex: (html) =>
           html.replace('<head>', '<head><script>window.__DSH_BOOT__={}</script>'),
       },
+      authToken: "?token=test-launch",
       clientModules: {
         graph: () => ({ entries: [{ id: '@deepseek-ai/dsh-client-modules' }] }),
         clientPath: (id) =>
@@ -59,6 +60,7 @@ describe('writeShellSession', () => {
       dist: { distRoot, distIndex: join(distRoot, 'index.html') },
       rawIndex: '<html><head></head><body></body></html>',
       webServer: { renderIndex: (html) => html },
+      authToken: "?token=test-launch",
       clientModules: { graph: () => ({ entries: [] }), clientPath: () => undefined },
       dirOverride: runDir,
     })
