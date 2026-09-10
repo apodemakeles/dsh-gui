@@ -3,12 +3,13 @@
 // Variant B (user decision): a quiet live capsule — green dot + today's
 // total — refreshed by the visibility-gated feed in today-usage.ts.
 
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import type { TokenKey } from '../locales.ts'
+import type { PropsLocale } from '../../../../client/client-context.ts'
 import { fmt } from '../fmt.ts'
 import { togglePanel } from '../store.ts'
 import { useTodayUsage } from './today-usage.ts'
 
-export type FooterTokenEntryProps = PropsLocale<'token-dashboard'> & { wide: boolean }
+export type FooterTokenEntryProps = PropsLocale<TokenKey> & { wide: boolean }
 
 export function FooterTokenEntry({ t, wide }: FooterTokenEntryProps) {
   const today = useTodayUsage()

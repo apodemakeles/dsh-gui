@@ -13,23 +13,13 @@
 // logged, never thrown — the web shell fails the whole boot when a plugin
 // apply throws.
 
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-import type {} from '@deepseek-ai/dsh-client-ui-slots'
-import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
-import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
-import type {} from '@deepseek-ai/dsh-client-locale/client'
-import { en, zh, type TokenKey } from './locales.ts'
+import type { ClientContext } from '../../../client/client-context.ts'
+import { en, zh } from './locales.ts'
 import { injectStyles } from './styles.ts'
 import { FooterTokenEntry } from './entry/FooterTokenEntry.tsx'
 import { TokenPanel } from './panel/Panel.tsx'
 
 const NS = 'token-dashboard'
-
-declare module '@deepseek-ai/dsh-client-ui-slots' {
-  interface LocaleNamespaceMap {
-    'token-dashboard': TokenKey
-  }
-}
 
 /** Mount the sidebar entry and the heatmap panel. */
 export function applyTokenUsageClient(ctx: ClientContext): void {

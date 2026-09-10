@@ -8,9 +8,9 @@
  * `register` / `registerUpgrade` / `registerFallback` stay on the face because
  * official plugins call them at boot (`connection` mounts `/api` + WebSocket
  * upgrades; `dsh-web-app` mounts frontend-static on the fallback seat).
- * Exact routes registered here are dispatched through the Unix fetch carrier
- * (see assembly/web-route-dispatch.ts) before the composed `/api` handler;
- * prefix/upgrade/fallback tables stay silent — `/api` rides that composition.
+ * Since dsh 0.1.5, Connection's shared `/api` handler composes the exact
+ * routes itself; prefix/upgrade/fallback tables stay silent — `/api` rides
+ * that composition.
  */
 import { Service, type Context } from '@deepseek-ai/cordis'
 import {

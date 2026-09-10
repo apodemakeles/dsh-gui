@@ -4,7 +4,8 @@
 
 import { useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import type { TokenKey } from '../locales.ts'
+import type { PropsLocale } from '../../../../client/client-context.ts'
 import type { TokenDayBucket } from '../../core/types.ts'
 import { fmt } from '../fmt.ts'
 import { DayTipContent, Tip } from './Tip.tsx'
@@ -34,7 +35,7 @@ function colorOf(total: number, max: number): string {
   return LEVELS[4]
 }
 
-export interface HeatmapProps extends PropsLocale<'token-dashboard'> {
+export interface HeatmapProps extends PropsLocale<TokenKey> {
   days: readonly TokenDayBucket[]
 }
 

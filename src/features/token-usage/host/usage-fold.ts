@@ -1,15 +1,14 @@
 // Replay-aware usage fold over session events, mirroring the official
-// dsh-token-meter projection semantics (research 02, §3):
-// - usage arrives on assistant/chunk (data.chunk.type === 'usage') and on
-//   assistant/message (data.usage), once each per (turn, step), with equal
-//   values — counting both would double-count.
-// - dedup = last sample per (turn, step) wins (the message replaces the chunk
-//   sample); a chunk sample without a message (failed request) still counts.
-// - replay/retry duplicates overwrite rather than accumulate.
+// dsh-token-meter projection semantics (research 02, §3), adapted to the
+// dsh 0.1.5 V3 log format:
+// - usage arrives only on assistant/message (data.usage, the step's final
+//   accounting); the V2 assistant/chunk usage samples are gone from the log.
+// - dedup = last sample per (turn, step) wins (replay/retry duplicates
+//   overwrite rather than accumulate).
 //
 // Implementation note: we key by (turn, step) instead of the official
 // single-slot adjacency fold, so the fold stays correct even if the log were
-// ever re-ordered across a readFrom boundary.
+// ever re-ordered across a read boundary.
 
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { TokenUsageLike, UsageSample } from '../core/types.ts'
@@ -41,19 +40,6 @@ export function foldUsage(events: readonly SessionEvent[]): UsageSample[] {
       if (usage !== undefined) {
         const { turn, step } = event.data
         byStep.set(turn + ':' + step, { turn, step, time: event.time, usage: usage as TokenUsageLike, provider, model })
-      }
-      continue
-    }
-    if (event.type === 'assistant/chunk') {
-      const chunk = event.data.chunk
-      if (chunk.type === 'usage') {
-        const { turn, step } = event.data
-        const key = turn + ':' + step
-        // A message sample that already replaced this chunk wins; the chunk
-        // only counts when no final sample exists yet for the same (turn, step).
-        if (!byStep.has(key)) {
-          byStep.set(key, { turn, step, time: event.time, usage: chunk.usage as TokenUsageLike, provider, model })
-        }
       }
     }
   }

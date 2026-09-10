@@ -92,19 +92,6 @@ export function normalizeEventDelta(event: SessionEvent): UsageDelta | null {
       final: true,
     }
   }
-  if (event.type === 'assistant/chunk') {
-    const chunk = event.data.chunk
-    if (chunk.type !== 'usage') return null
-    return {
-      kind: 'usage',
-      seq: event.seq,
-      time: event.time,
-      turn: event.data.turn,
-      step: event.data.step,
-      usage: chunk.usage as TokenUsageLike,
-      final: false,
-    }
-  }
   return null
 }
 
