@@ -34,3 +34,14 @@
 - 窗口加载路径不经过 HTTP 端口，满足里程碑验收标准 3。
 - `client-modules` / `connection` 仍注入名为 `webServer` 的 Cordis 服务；gui 提供不 listen 的替身，避免为了满足 inject 去绑 3080。
 - 官方 dist 升级后若仍用根绝对路径，本决策继续成立；若改为相对路径，可再评估回到 `file://`。
+
+## Amendment (dsh 0.1.5, PR #6): loopback HTTP surface replaces the custom-scheme page origin
+
+dsh 0.1.5 broke this decision's two pillars:
+
+1. **远程事件改走 WebSocket。** gateway 客户端把页面 origin 的协议强转 `ws:`，拨 `ws://<origin>/api/remote.mux`；自定义 scheme 的页面 origin 没有可拨的端口，且 Electron 会剥掉 `dsh-gui://` URL 上的端口（CDP 实测），origin 永远带不上端口。
+2. **浏览器认证。** `/api` 与 mux 握手要求 Connection 签发的 auth cookie，cookie 由 launch token 经 `authorizeIndex`（根路径 303 + Set-Cookie）铸造——这要求宿主 HTTP 平面上有一条真实的根路由。
+
+因此客户端窗口改从 `http://127.0.0.1:<临时端口>` 加载，由壳主进程的 `main/http-surface.ts` 服务：`/api`、根路径（authorizeIndex）与 WebSocket upgrade 按请求/按字节代理到宿主的 Unix 载体，dist 与插件 bundle 仍由壳本地伺服（同一套 assembly 纯函数）。`dsh-gui://` 协议注册保留但不再是页面 origin。
+
+**不变式修订**：「无 TCP 端口」放宽为「仅 127.0.0.1 + 随机临时端口，进程退出即关闭」——暴露面与官方 `dsh --profile web` 绑 127.0.0.1 等价，且仍无 LAN 可达性。Unix socket 仍是宿主的唯一监听面（TCP 侧在壳进程，纯代理，无独立业务）。
