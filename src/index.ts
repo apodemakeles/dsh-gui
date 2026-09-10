@@ -6,10 +6,17 @@
  * already running: only the carrier and the handshake are set up here.
  */
 import { readFileSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
+import { readFile, rm } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
+import type { WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
 import { listenFetchOnUnixSocket } from './assembly/unix-http.ts'
-import { dispatchExactWebRoute, type ExactRouteSource } from './assembly/web-route-dispatch.ts'
+import {
+  callNodeStyleHandler,
+  dispatchExactWebRoute,
+  type ExactRouteSource,
+} from './assembly/web-route-dispatch.ts'
+import { isShellIndexPath } from './assembly/static-path.ts'
+import { HTML_MIME } from './assembly/mime.ts'
 import { resolveWebClientDist } from './assembly/web-client-dist.ts'
 import { EXTERNAL_SHELL_DIR_ENV } from './assembly/session.ts'
 import { applyTokenUsage } from './features/token-usage/host/index.ts'
@@ -20,11 +27,18 @@ import { spawnElectronShell } from './host/spawn-shell.ts'
 
 type FetchFace = { fetch(request: Request): Promise<Response> }
 
+type UpgradeRouteSource = {
+  upgradeRoutes(): ReadonlyMap<string, WebUpgradeRoute>
+}
+
 type GuiContext = Context & {
-  webServer: IndexRenderer & ExactRouteSource
+  webServer: IndexRenderer & ExactRouteSource & UpgradeRouteSource
   clientModules: ClientModuleFace
   connection: {
     createSharedFetchHandler(channel: '/api'): FetchFace
+    /** Browser-auth: mint the cookie from the launch token, gate the index. */
+    authorizeIndex(request: unknown, response: unknown): boolean
+    authenticatedUrl(baseUrl: string): string
   }
 }
 
@@ -52,21 +66,52 @@ export function apply(ctx: GuiContext): void {
   const dist = resolveWebClientDist(import.meta.url)
   const rawIndex = readFileSync(dist.distIndex, 'utf8')
 
+  // The browser-auth plane (dsh 0.1.5): the shell's first navigation carries
+  // this launch token; authorizeIndex mints the cookie that /api and the
+  // remote-event WebSocket require.
+  const authToken = new URL(ctx.connection.authenticatedUrl('http://127.0.0.1/')).search
+
   const started = writeShellSession({
     dist,
     rawIndex,
     webServer: ctx.webServer,
     clientModules: ctx.clientModules,
+    authToken,
     dirOverride: externalDir,
   }).then(async (files) => {
     // Since dsh 0.1.5, Connection composes the shared /api RPC handler itself;
     // createSharedFetchHandler no longer takes a fetch fallback. Feature exact
     // routes (the token-usage snapshot) still live on the webServer's table and
     // dispatch first — official precedence: exact beats the /api channel.
+    // Index requests run through Connection's browser-auth: a launch token
+    // mints the cookie (303), a valid cookie earns the assembled index, and
+    // the remote-event WebSocket upgrade dispatches to the gateway's mux.
     const rpc = ctx.connection.createSharedFetchHandler('/api')
     const server = await listenFetchOnUnixSocket(files.socketPath, async (request) => {
+      const url = new URL(request.url)
+      if (url.pathname === '/' || isShellIndexPath(url.pathname)) {
+        let authorized = false
+        const authResponse = await callNodeStyleHandler((req, res) => {
+          authorized = ctx.connection.authorizeIndex(req, res)
+        }, request)
+        if (authorized) {
+          return new Response(await readFile(files.indexPath), {
+            status: 200,
+            headers: { 'content-type': HTML_MIME },
+          })
+        }
+        return authResponse
+      }
       const routed = await dispatchExactWebRoute(ctx.webServer, request)
       return routed ?? rpc.fetch(request)
+    }, (req, socket, head) => {
+      const pathname = new URL(req.url ?? '/', 'http://localhost').pathname
+      const route = ctx.webServer.upgradeRoutes().get(pathname)
+      if (route === undefined) {
+        socket.destroy()
+        return
+      }
+      void route.handler(req, socket, head)
     })
     let hostDisposed = false
     const stop = () => {

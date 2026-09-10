@@ -33,6 +33,8 @@ export async function writeShellSession(input: {
   rawIndex: string
   webServer: IndexRenderer
   clientModules: ClientModuleFace
+  /** Connection's browser-auth launch token (dsh 0.1.5 browser plane). */
+  authToken: string
   dirOverride?: string
 }): Promise<SessionFiles> {
   let dir: string
@@ -59,6 +61,7 @@ export async function writeShellSession(input: {
     distRoot: input.dist.distRoot,
     indexPath,
     pluginBundles,
+    authToken: input.authToken,
   }
   await writeFile(sessionPath + '.tmp', JSON.stringify(session), 'utf8')
   await rename(sessionPath + '.tmp', sessionPath)

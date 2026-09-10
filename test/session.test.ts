@@ -9,9 +9,11 @@ describe('parseShellSession', () => {
         distRoot: '/dist',
         indexPath: '/tmp/index.html',
         pluginBundles: { '@deepseek-ai/dsh-client-modules': '/pkg/client.js' },
+        authToken: '?token=test-launch',
       }),
     )
     expect(session.socketPath).toBe('/tmp/dsh-gui.sock')
+    expect(session.authToken).toBe('?token=test-launch')
     expect(session.pluginBundles['@deepseek-ai/dsh-client-modules']).toBe(
       '/pkg/client.js',
     )

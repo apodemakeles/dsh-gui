@@ -32,6 +32,7 @@ import {
 } from '../../assembly/launch.ts'
 import { installShellProtocol } from './protocol.ts'
 import { createClientWindow } from './client-window.ts'
+import { startHttpSurface } from './http-surface.ts'
 import { APP_NAME } from '../shared/scheme.ts'
 
 /** Cold plugin loading measures ~30–40s; leave 3× headroom before failing. */
@@ -176,8 +177,10 @@ export function startLauncher(): LauncherHandle {
 
     state = 'ready'
     installShellProtocol(session)
-    client = createClientWindow()
+    const surface = await startHttpSurface(session)
+    client = createClientWindow(surface.port, session.authToken)
     client.on('closed', () => {
+      surface.close()
       void shutdown()
     })
     splashDismissed = true

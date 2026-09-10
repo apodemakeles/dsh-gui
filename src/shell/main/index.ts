@@ -10,6 +10,7 @@ import { SHELL_SCHEME, APP_NAME } from '../shared/scheme.ts'
 import { createClientWindow } from './client-window.ts'
 import { startLauncher } from './launcher.ts'
 import { installShellProtocol } from './protocol.ts'
+import { startHttpSurface } from './http-surface.ts'
 
 app.setName(APP_NAME)
 app.setPath('userData', join(app.getPath('appData'), APP_NAME))
@@ -51,7 +52,7 @@ function quitShell(): void {
   app.exit(0)
 }
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   // Host-spawned mode (terminal `dsh --profile gui`): the plugin wrote the
   // session file and passed it via env. Closing the window exits; the host
   // watches this process and exits with it.
@@ -61,8 +62,10 @@ void app.whenReady().then(() => {
     // Unpackaged `Electron.app` otherwise occupies the Dock as a generic
     // "Electron" tile (and macOS recent-apps may keep it after quit).
     app.dock?.hide()
-    const win = createClientWindow()
+    const surface = await startHttpSurface(session)
+    const win = createClientWindow(surface.port, session.authToken)
     win.on('closed', () => {
+      surface.close()
       quitShell()
     })
     app.on('window-all-closed', () => {

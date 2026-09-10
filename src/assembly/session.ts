@@ -19,6 +19,12 @@ export interface ShellSession {
   indexPath: string
   /** Graph row id → absolute `exports["./client"]` path. */
   pluginBundles: Record<string, string>
+  /**
+   * Connection's browser-auth launch token (since dsh 0.1.5): the client
+   * window's initial URL carries it as `?…`, and the host's `authorizeIndex`
+   * mints the browser-auth cookie the /api and WebSocket planes require.
+   */
+  authToken: string
 }
 
 export function parseShellSession(raw: string): ShellSession {
@@ -31,6 +37,7 @@ export function parseShellSession(raw: string): ShellSession {
     typeof session.socketPath !== 'string' ||
     typeof session.distRoot !== 'string' ||
     typeof session.indexPath !== 'string' ||
+    typeof session.authToken !== 'string' ||
     !isStringRecord(session.pluginBundles)
   ) {
     throw new Error('dsh-gui: session payload is missing required string fields')
