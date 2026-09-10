@@ -17,7 +17,7 @@ The data pipeline matches the standalone [dsh-token-dashboard](https://github.co
 
 ## Install (target usage)
 
-Requires dsh `0.1.x-rc`:
+Requires dsh `0.1.5-rc.1` (dsh-gui 0.4.0+ pins the whole `@deepseek-ai/*` line to it; the composition contract is version-sensitive — a mismatched dsh fails at profile boot). Older dsh-gui releases target older dsh lines:
 
 ```sh
 dsh plugin --profile gui add github:apodemakeles/dsh-gui
@@ -28,7 +28,7 @@ Then pick an entry point:
 - **Launcher .app (recommended)**: download `dsh-gui-mac-arm64.app.zip` from the [releases](https://github.com/apodemakeles/dsh-gui/releases), unzip, and drag `dsh-gui.app` into `/Applications`. Clicking the icon boots the host (`dsh --profile gui`) as a child process, shows a splash while plugins load, and **closing the window terminates the host too**. The app is not signed: the first launch of a downloaded copy needs a one-time approval in System Settings → Privacy & Security. Functionality updates keep flowing through the plugin; the .app itself rarely changes.
 - **Terminal**: `dsh --profile gui` — unchanged, useful for debugging (host logs stay on the terminal).
 
-Because the shell ships Electron as a runtime dependency, pnpm will ask you to approve build scripts once: copy the printed package keys (`@apodemakeles/dsh-gui` and `electron`) into the `allowBuilds` list of your profile's `pnpm-workspace.yaml`, then re-run `add`.
+Because the shell ships Electron as a runtime dependency, pnpm will ask you to approve build scripts once: copy the printed package keys (`@apodemakeles/dsh-gui`, `electron`, and `koffi`) into the `allowBuilds` list of your profile's `pnpm-workspace.yaml`, then re-run `add`.
 
 ## Development
 

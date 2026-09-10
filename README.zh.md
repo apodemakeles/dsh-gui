@@ -17,7 +17,7 @@
 
 ## 安装（目标用法）
 
-需要 dsh `0.1.x-rc`：
+需要 dsh `0.1.5-rc.1`（dsh-gui 0.4.0 起全量 pin 该 rc 线；组合契约对版本敏感，不匹配的 dsh 会在 profile 启动时直接报错）。更早的 dsh-gui 版本对应更早的 dsh 线：
 
 ```sh
 dsh plugin --profile gui add github:apodemakeles/dsh-gui
@@ -28,7 +28,7 @@ dsh plugin --profile gui add github:apodemakeles/dsh-gui
 - **启动器 .app（推荐）**：从 [releases](https://github.com/apodemakeles/dsh-gui/releases) 下载 `dsh-gui-mac-arm64.app.zip`，解压后把 `dsh-gui.app` 拖进 `/Applications`。点图标即把宿主（`dsh --profile gui`）作为子进程拉起，插件加载期间显示启动页，**关闭窗口即连宿主一起退出**。应用未签名：网上下载的副本首次打开需在「系统设置 → 隐私与安全性」放行一次。功能更新继续走插件，.app 本身很少变动。
 - **终端**：`dsh --profile gui`——保持原样，调试时有用（宿主日志留在终端里）。
 
-由于壳把 Electron 作为运行时依赖，pnpm 会要求你授权一次构建脚本：把打印出来的包名（`@apodemakeles/dsh-gui` 和 `electron`）抄进你 profile 的 `pnpm-workspace.yaml` 的 `allowBuilds` 列表，再重跑一次 `add` 即可。
+由于壳把 Electron 作为运行时依赖，pnpm 会要求你授权一次构建脚本：把打印出来的包名（`@apodemakeles/dsh-gui`、`electron` 和 `koffi`）抄进你 profile 的 `pnpm-workspace.yaml` 的 `allowBuilds` 列表，再重跑一次 `add` 即可。
 
 ## 开发
 
