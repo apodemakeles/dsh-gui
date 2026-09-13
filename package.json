@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "electron": "^37.3.1",
+    "@deepseek-ai/schemastery": "3.18.2",
     "@deepseek-ai/dsh-host-webserver": "0.1.5-rc.1",
     "@deepseek-ai/dsh-web-frontend": "0.1.5-rc.1",
     "@deepseek-ai/dsh-agent-presets": "0.1.5-rc.1",

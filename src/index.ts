@@ -20,6 +20,7 @@ import { HTML_MIME } from './assembly/mime.ts'
 import { resolveWebClientDist } from './assembly/web-client-dist.ts'
 import { EXTERNAL_SHELL_DIR_ENV } from './assembly/session.ts'
 import { applyTokenUsage } from './features/token-usage/host/index.ts'
+import { applyTurnNotify } from './features/turn-notify/host/index.ts'
 import type { ClientModuleFace, IndexRenderer } from './host/session-files.ts'
 import { writeShellSession } from './host/session-files.ts'
 import { resolveShellPaths } from './host/shell-paths.ts'
@@ -51,13 +52,20 @@ export const inject = [
   // token-usage feature: live session store + the persistence seam.
   'sessions',
   'sessionPersistence',
+  // turn-notify feature: the settings seam (the switch namespace) and the
+  // log-backed session-title service (notification titles).
+  'settings',
+  'sessionTitle',
 ]
 
 export function apply(ctx: GuiContext): void {
+  // Connection's launch-token query; also guards the turn-notify poll route.
+  const authToken = new URL(ctx.connection.authenticatedUrl('http://127.0.0.1/')).search
   // Feature modules register synchronously, so their exact routes (the
-  // token-usage snapshot) are in the webServer table before the carrier
-  // starts dispatching below.
+  // token-usage snapshot, the turn-notify long-poll) are in the webServer
+  // table before the carrier starts dispatching below.
   applyTokenUsage(ctx)
+  applyTurnNotify(ctx, { authToken })
   // Launcher mode (packaged .app): the shell is already running and spawned
   // this host, so skip our own Electron and publish the handshake where the
   // launcher told us to.
@@ -69,8 +77,6 @@ export function apply(ctx: GuiContext): void {
   // The browser-auth plane (dsh 0.1.5): the shell's first navigation carries
   // this launch token; authorizeIndex mints the cookie that /api and the
   // remote-event WebSocket require.
-  const authToken = new URL(ctx.connection.authenticatedUrl('http://127.0.0.1/')).search
-
   const started = writeShellSession({
     dist,
     rawIndex,
