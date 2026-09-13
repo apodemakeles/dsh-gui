@@ -11,6 +11,7 @@ import { createClientWindow } from './client-window.ts'
 import { startLauncher } from './launcher.ts'
 import { installShellProtocol } from './protocol.ts'
 import { startHttpSurface } from './http-surface.ts'
+import { startTurnNotify, type TurnNotifyHandle } from './notifications.ts'
 
 app.setName(APP_NAME)
 app.setPath('userData', join(app.getPath('appData'), APP_NAME))
@@ -64,7 +65,9 @@ void app.whenReady().then(async () => {
     app.dock?.hide()
     const surface = await startHttpSurface(session)
     const win = createClientWindow(surface.port, session.authToken)
+    const turnNotify: TurnNotifyHandle = startTurnNotify(session, win)
     win.on('closed', () => {
+      turnNotify.stop()
       surface.close()
       quitShell()
     })

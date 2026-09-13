@@ -13,6 +13,8 @@ export interface SlotRegistration {
   id: string
   order?: number
   locale?: string
+  /** Keyed-slot key (e.g. `settings.plugin.item` dispatches by settings namespace). */
+  key?: string
 }
 
 export interface ClientSlots {
@@ -27,10 +29,32 @@ export interface ClientLocale {
   register(namespace: string, locales: Record<string, Record<string, string>>): unknown
 }
 
+/** Reactive mirror of one settings namespace (the runtime's settingsScope.bind). */
+export interface ClientSettingsScope<T> {
+  getSnapshot(): ClientSettingsSnapshot<T>
+  subscribe(listener: () => void): () => void
+  set(field: string, value: unknown): Promise<void>
+}
+
+/** Narrowed slice of the runtime's SettingsScopeSnapshot. */
+export interface ClientSettingsSnapshot<T> {
+  status: 'loading' | 'ready' | 'unavailable'
+  value: T | undefined
+}
+
+export interface ClientSessions {
+  /** Open (and focus) a session by id; the id must be in the list. */
+  open(sessionId: string): unknown
+}
+
 export interface ClientContext {
   effect(task: () => unknown, name?: string): void
   slots: ClientSlots
   locale: ClientLocale
+  /** Present when the composed runtime mounts the settings transport. */
+  settingsScope?: { bind<T>(spec: { namespace: string }): ClientSettingsScope<T> }
+  /** Present when the composed runtime mounts the sessions service. */
+  sessions?: ClientSessions
 }
 
 /** Slot-component props: the component declares its dictionary's key union;

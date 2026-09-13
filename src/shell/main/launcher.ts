@@ -33,6 +33,7 @@ import {
 import { installShellProtocol } from './protocol.ts'
 import { createClientWindow } from './client-window.ts'
 import { startHttpSurface } from './http-surface.ts'
+import { startTurnNotify } from './notifications.ts'
 import { APP_NAME } from '../shared/scheme.ts'
 
 /** Cold plugin loading measures ~30–40s; leave 3× headroom before failing. */
@@ -179,7 +180,9 @@ export function startLauncher(): LauncherHandle {
     installShellProtocol(session)
     const surface = await startHttpSurface(session)
     client = createClientWindow(surface.port, session.authToken)
+    const turnNotify = startTurnNotify(session, client)
     client.on('closed', () => {
+      turnNotify.stop()
       surface.close()
       void shutdown()
     })

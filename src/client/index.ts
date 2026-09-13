@@ -6,10 +6,12 @@
  */
 import type { ClientContext } from './client-context.ts'
 import { applyTokenUsageClient } from '../features/token-usage/client/index.ts'
+import { applyTurnNotifyClient } from '../features/turn-notify/client/index.ts'
 
 /** Required client services: the slot registry and the locale dictionary. */
 export const inject = ['slots', 'locale']
 
 export function apply(ctx: ClientContext): void {
   applyTokenUsageClient(ctx)
+  applyTurnNotifyClient(ctx)
 }

@@ -212,6 +212,9 @@ importers:
       '@deepseek-ai/dsh-workspace':
         specifier: 0.1.5-rc.1
         version: 0.1.5-rc.1(0d21b8701233c0d1ccd262c73d8d4b61)
+      '@deepseek-ai/schemastery':
+        specifier: 3.18.2
+        version: 3.18.2
       electron:
         specifier: ^37.3.1
         version: 37.10.3(supports-color@7.2.0)
