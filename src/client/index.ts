@@ -8,8 +8,10 @@ import type { ClientContext } from './client-context.ts'
 import { applyTokenUsageClient } from '../features/token-usage/client/index.ts'
 import { applyTurnNotifyClient } from '../features/turn-notify/client/index.ts'
 
-/** Required client services: the slot registry and the locale dictionary. */
-export const inject = ['slots', 'locale']
+/** Required client services: the slot registry and the locale dictionary,
+ * plus turn-notify's settings card (`settingsScope`) and click-to-jump
+ * (`sessions`) — cordis throws on reads of undeclared service properties. */
+export const inject = ['slots', 'locale', 'settingsScope', 'sessions']
 
 export function apply(ctx: ClientContext): void {
   applyTokenUsageClient(ctx)
