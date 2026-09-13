@@ -118,7 +118,7 @@ export function applyTurnNotify(ctx: Context, options: TurnNotifyOptions): void 
         path: TURN_NOTIFY_EVENTS_PATH,
         handler: async (req, res) => {
           const url = new URL(req.url ?? '/', 'http://localhost')
-          if (options.authToken !== '' && url.search !== options.authToken) {
+          if (options.authToken !== '' && !carriesAuthToken(url, options.authToken)) {
             res.writeHead(403, { 'content-type': 'application/json; charset=utf-8' })
             res.end('{"ok":false}')
             return
@@ -153,6 +153,20 @@ function buildSchema(): unknown {
       .description('对话处理完成后，若 dsh-gui 不在前台则弹 macOS 通知')
       .default(true),
   }).description('轮次完成通知')
+}
+
+/**
+ * Every (key, value) pair of the launch-token query must be present on the
+ * request — callers may append more params (the shell adds `wait`), so an
+ * exact search-string compare would reject every real poll.
+ */
+function carriesAuthToken(url: URL, authToken: string): boolean {
+  const raw = authToken.startsWith('?') ? authToken : `?${authToken}`
+  const expected = new URL(`http://localhost/${raw}`).searchParams
+  for (const [key, value] of expected.entries()) {
+    if (url.searchParams.get(key) !== value) return false
+  }
+  return true
 }
 
 function waitMsOf(raw: string | null): number {
