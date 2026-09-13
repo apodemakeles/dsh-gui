@@ -52,6 +52,10 @@ export const inject = [
   // token-usage feature: live session store + the persistence seam.
   'sessions',
   'sessionPersistence',
+  // turn-notify feature: the settings seam (the switch namespace) and the
+  // log-backed session-title service (notification titles).
+  'settings',
+  'sessionTitle',
 ]
 
 export function apply(ctx: GuiContext): void {
