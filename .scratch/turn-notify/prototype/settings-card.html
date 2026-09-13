@@ -1,0 +1,158 @@
+<!doctype html>
+<!-- PROTOTYPE · turn-notify 票 05 · 用完即弃
+     三个设置卡形态变体，?variant=A|B|C 切换（底部浮动条或 ←/→ 键）。
+     变体嵌在仿 dsh 设置页的密度上下文里（周边卡片是假数据），只看「轮次完成通知」卡本身。 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE · 轮次完成通知 · 设置卡选型</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --line: #e5e5ea;
+    --text: #1c1c1e; --text2: #6e6e73; --accent: #0a84ff;
+    --switch-on: #34c759; --switch-off: #d1d1d6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 32px 24px 120px; }
+  .page-head h1 { font-size: 22px; font-weight: 700; margin: 0 0 16px; }
+  .section-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; margin: 28px 0 8px; }
+
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--line); overflow: hidden; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row .grow { flex: 1; min-width: 0; }
+  .row .label { font-weight: 500; }
+  .row .desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  .switch { position: relative; width: 44px; height: 26px; border-radius: 13px; background: var(--switch-off); cursor: pointer; flex: none; transition: background .15s; border: none; padding: 0; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .15s; }
+  .switch.on { background: var(--switch-on); }
+  .switch.on::after { left: 20px; }
+
+  .icon-badge { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #5e5ce6, #0a84ff); color: #fff; display: grid; place-items: center; font-size: 17px; flex: none; }
+
+  .state-note { margin: 10px 2px 0; font-size: 12px; color: var(--text2); font-family: ui-monospace, monospace; }
+
+  /* 浮动切换条 */
+  .bar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: #1c1c1e; color: #fff; border-radius: 999px; padding: 6px 8px; box-shadow: 0 6px 24px rgba(0,0,0,.35); z-index: 9; }
+  .bar button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 999px; font-size: 15px; }
+  .bar button:hover { background: #3a3a3c; }
+  .bar .lab { font-size: 12.5px; padding: 0 8px; min-width: 170px; text-align: center; }
+  .bar .lab b { font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <h1>设置</h1>
+  </div>
+
+  <!-- 假的邻居设置，提供密度上下文 -->
+  <div class="section-title">通用</div>
+  <div class="card">
+    <div class="row"><div class="grow"><div class="label">语言</div></div><span style="color:var(--text2)">简体中文 ›</span></div>
+    <div class="row"><div class="grow"><div class="label">主题</div></div><span style="color:var(--text2)">跟随系统 ›</span></div>
+    <div class="row"><div class="grow"><div class="label">启动时检查更新</div><div class="desc">自动检查 dsh 与客户端新版本</div></div><button class="switch on" onclick="flip(this,'autoUpdate')"></button></div>
+  </div>
+
+  <div class="section-title">模型</div>
+  <div class="card">
+    <div class="row"><div class="grow"><div class="label">默认模型</div></div><span style="color:var(--text2)">deepseek-chat ›</span></div>
+    <div class="row"><div class="grow"><div class="label">温度</div></div><span style="color:var(--text2)">0.7</span></div>
+  </div>
+
+  <!-- 变体挂载点 -->
+  <div id="mount"></div>
+  <div class="state-note" id="state"></div>
+</div>
+
+<div class="bar">
+  <button onclick="cycle(-1)" title="上一个">←</button>
+  <span class="lab" id="lab"></span>
+  <button onclick="cycle(1)" title="下一个">→</button>
+</div>
+
+<script>
+  // 通知总开关的演示状态（内存态，无持久化）
+  let notifyOn = true, autoUpdate = true;
+  const state = () => `notify.turnNotify.enabled = ${notifyOn}  ·  (演示态，仅内存)`;
+
+  function flip(el, key) {
+    if (key === 'autoUpdate') { autoUpdate = !autoUpdate; el.classList.toggle('on', autoUpdate); return; }
+    notifyOn = !notifyOn; el.classList.toggle('on', notifyOn); render();
+  }
+
+  // ── 变体 ─────────────────────────────────────────────
+  // A：单行形态——不建自己的卡，作为「通用」卡里的一行（信息密度与系统设置一致）
+  const VariantA = `
+    <div class="section-title">通用（含本功能，单行形态）</div>
+    <div class="card">
+      <div class="row"><div class="grow"><div class="label">语言</div></div><span style="color:var(--text2)">简体中文 ›</span></div>
+      <div class="row">
+        <div class="grow">
+          <div class="label">轮次完成通知</div>
+          <div class="desc">对话处理完成后，若 dsh-gui 不在前台，弹 macOS 通知</div>
+        </div>
+        <button class="switch ${notifyOn?'on':''}" onclick="flip(this)"></button>
+      </div>
+      <div class="row"><div class="grow"><div class="label">启动时检查更新</div><div class="desc">自动检查 dsh 与客户端新版本</div></div><button class="switch on" onclick="flip(this,'autoUpdate')"></button></div>
+    </div>`;
+
+  // B：独立插件卡——自己的卡片（图标 + 标题 + 说明 + 开关），插件身份可见
+  const VariantB = `
+    <div class="section-title">插件</div>
+    <div class="card">
+      <div class="row">
+        <div class="icon-badge">🔔</div>
+        <div class="grow">
+          <div class="label">轮次完成通知</div>
+          <div class="desc">每轮对话处理完成后，若 dsh-gui 不在前台则弹 macOS 通知（含失败提醒）</div>
+        </div>
+        <button class="switch ${notifyOn?'on':''}" onclick="flip(this)"></button>
+      </div>
+    </div>`;
+
+  // C：分组段——「通知」小节 + 组内行，为将来更多通知类开关预留分组
+  const VariantC = `
+    <div class="section-title">通知</div>
+    <div class="card">
+      <div class="row">
+        <div class="grow">
+          <div class="label">轮次完成通知</div>
+          <div class="desc">对话处理完成后，若 dsh-gui 不在前台则弹通知</div>
+        </div>
+        <button class="switch ${notifyOn?'on':''}" onclick="flip(this)"></button>
+      </div>
+    </div>
+    <div class="state-note" style="margin-top:6px">（分组预留位：未来可在此加「失败提醒」「静默时段」等同组开关）</div>`;
+
+  const variants = { A: ['单行形态', VariantA], B: ['独立插件卡', VariantB], C: ['分组段', VariantC] };
+  const keys = Object.keys(variants);
+
+  function current() {
+    const v = new URLSearchParams(location.search).get('variant');
+    return keys.includes(v) ? v : 'A';
+  }
+  function render() {
+    const k = current();
+    document.getElementById('mount').innerHTML = variants[k][1];
+    document.getElementById('lab').innerHTML = `<b>${k}</b> (${variants[k][0]})`;
+    document.getElementById('state').textContent = state();
+  }
+  function cycle(d) {
+    const next = keys[(keys.indexOf(current()) + d + keys.length) % keys.length];
+    const url = new URL(location); url.searchParams.set('variant', next);
+    history.replaceState(null, '', url); render();
+  }
+  addEventListener('keydown', e => {
+    if (/INPUT|TEXTAREA/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable) return;
+    if (e.key === 'ArrowLeft') cycle(-1);
+    if (e.key === 'ArrowRight') cycle(1);
+  });
+  render();
+</script>
+</body>
+</html>

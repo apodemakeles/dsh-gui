@@ -33,7 +33,7 @@ dsh（DeepSeek Harness）的桌面壳：**以 dsh 插件（bundle）身份交付
 
 第二 Cordis 入口：`package.json` 的 `exports["./webserver"]`（静默 `webServer` 替身）；浏览器半区入口：`exports["./client"]` + `dsh.client` 声明（闭包工厂 bundle，经 `/plugins/<包名>/client.js` 伺服）。
 
-**新增功能模块**的做法：在 `src/features/<名>/` 建文件夹（宿主侧导出 `applyXxx(ctx)`，浏览器侧导出 `applyXxxClient(ctx)`），宿主侧在 `src/index.ts` 的 `apply()` 里注册、浏览器侧在 `src/client/index.ts` 里注册。不建独立插件包、不新增 dsh.bundle 声明。
+**新增功能模块**的做法：在 `src/features/<名>/` 建文件夹（宿主侧导出 `applyXxx(ctx)`，浏览器侧导出 `applyXxxClient(ctx)`），宿主侧在 `src/index.ts` 的 `apply()` 里注册、浏览器侧在 `src/client/index.ts` 里注册。不建独立插件包、不新增 dsh.bundle 声明。注意：cordis 规定读取 `ctx.<服务>` 必须先在所在入口的 `inject` 数组里声明该服务名（client 与宿主各自一份），防御式判断也绕不开——读前先补清单。
 
 ## 3. 领域速览（dsh 十分钟入门）
 
@@ -86,3 +86,13 @@ export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_pr
 - 交流与内部文档用中文；面向用户的文档双语互链（`README.md` 英文 + `README.zh.md` 中文）。
 - 新文档进 `docs/`；不可逆且后人费解的架构决策写 `docs/adr/`（编号递增）。
 - `.scratch/` 规划文件随库提交，勿清理。
+
+## 9. Agent skills
+
+### Issue tracker
+
+issue 以本地 markdown 文件记录在 `.scratch/<feature>/`（一 feature 一目录：`spec.md` + `issues/NN-*.md`，状态写在文件顶部 `Status:` 行）。见 `docs/agents/issue-tracker.md`。
+
+### Domain docs
+
+单上下文布局：根 `CONTEXT.md`（术语表）+ `docs/adr/`。见 `docs/agents/domain.md`。

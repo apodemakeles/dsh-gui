@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- PROTOTYPE · turn-notify 票 05 · 用完即弃
+     通知排版选型的对照页：真实效果请运行同目录 notify.sh（真机横幅为准，App 名/图标会是 dsh-gui）。 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE · 轮次完成通知 · 通知排版选型</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 24px 80px; font: 14px/1.5 -apple-system, "PingFang SC", sans-serif; background: #ececec; color: #1c1c1e; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  .sub { color: #6e6e73; font-size: 13px; margin-bottom: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 32px; max-width: 860px; }
+  .col h2 { font-size: 15px; margin: 0 0 4px; }
+  .col .hint { font-size: 12.5px; color: #6e6e73; margin-bottom: 14px; }
+
+  /* macOS 通知横幅仿制（浅色） */
+  .banner { display: flex; gap: 10px; width: 356px; padding: 12px 14px; border-radius: 16px; background: rgba(250,250,250,.92); box-shadow: 0 8px 28px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.06); margin-bottom: 18px; backdrop-filter: blur(8px); }
+  .banner .appicon { width: 38px; height: 38px; border-radius: 9px; background: linear-gradient(135deg,#5e5ce6,#0a84ff); flex: none; display: grid; place-items: center; color:#fff; font-size: 19px; }
+  .banner .body { flex: 1; min-width: 0; padding-top: 1px; }
+  .banner .title { font-weight: 700; font-size: 13.5px; }
+  .banner .subtitle { font-size: 12.5px; font-weight: 600; color: #3a3a3c; }
+  .banner .text { font-size: 12.5px; color: #3a3a3c; }
+  .banner .appname { font-size: 11px; color: #8e8e93; text-align: right; margin-top: 2px; }
+  .banner.fail { background: rgba(255,249,249,.95); box-shadow: 0 8px 28px rgba(180,40,40,.22), 0 0 0 .5px rgba(180,40,40,.15); }
+  .banner.fail .appicon { background: linear-gradient(135deg,#ff453a,#ff9f0a); }
+
+  /* 点击行为对照 */
+  .click h2 { font-size: 15px; margin: 0 0 12px; }
+  .click .opts { display: flex; gap: 20px; flex-wrap: wrap; max-width: 860px; }
+  .click .opt { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 14px 16px; flex: 1 1 320px; }
+  .click .opt b { display: block; margin-bottom: 4px; }
+  .click .opt p { margin: 0; font-size: 12.5px; color: #6e6e73; }
+  .mini { display: flex; gap: 8px; margin-top: 10px; font-size: 11.5px; }
+  .mini .side { width: 96px; border: 1px solid #e5e5ea; border-radius: 8px; padding: 6px; }
+  .mini .s-item { padding: 3px 6px; border-radius: 5px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini .s-item.hit { background: #0a84ff; color: #fff; }
+  .mini .win { flex: 1; border: 1px dashed #c7c7cc; border-radius: 8px; display: grid; place-items: center; color: #8e8e93; min-height: 74px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+  <h1>通知排版选型（约束：只带会话名，不带内容）</h1>
+  <div class="sub">下列是仿制横幅；真机效果跑 <code>./notify.sh all</code>（App 名与图标会是 dsh-gui，标题/副标题/正文排布以真机为准）。</div>
+
+  <div class="grid">
+    <div class="col">
+      <h2>方案 A · 会话名为主</h2>
+      <div class="hint">标题=会话名（粗体大字是你在找的那个会话），正文=动词。多个会话同时完成时，堆叠里先读到「哪个会话」。</div>
+      <div class="banner">
+        <div class="appicon">🔔</div>
+        <div class="body"><div class="title">调试 WebSocket 重连</div><div class="text">处理完成</div><div class="appname">dsh-gui</div></div>
+      </div>
+      <div class="banner fail">
+        <div class="appicon">🔔</div>
+        <div class="body"><div class="title">调试 WebSocket 重连</div><div class="text">处理失败</div><div class="appname">dsh-gui</div></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <h2>方案 B · 结果为主</h2>
+      <div class="hint">标题=动词（扫一眼先知道「完成了/失败了」），副标题=会话名。失败态用标题直接报状态，不用颜色编码（系统横幅样式不可自定）。</div>
+      <div class="banner">
+        <div class="appicon">🔔</div>
+        <div class="body"><div class="title">处理完成</div><div class="subtitle">调试 WebSocket 重连</div><div class="appname">dsh-gui</div></div>
+      </div>
+      <div class="banner fail">
+        <div class="appicon">🔔</div>
+        <div class="body"><div class="title">处理失败</div><div class="subtitle">调试 WebSocket 重连</div><div class="appname">dsh-gui</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="click" style="margin-top:40px">
+    <h2>点击行为对照（02 票已证实两种都可行）</h2>
+    <div class="opts">
+      <div class="opt">
+        <b>① 仅聚焦窗口</b>
+        <p>点通知 → 把 dsh-gui 窗口拉到前台。实现最简、与系统通知直觉一致；若同时开了多个会话，需要自己再找一下是哪个。</p>
+        <div class="mini"><div class="win">dsh-gui 窗口 ← 拉到前台</div></div>
+      </div>
+      <div class="opt">
+        <b>② 聚焦 + 跳到该会话</b>
+        <p>点通知 → 拉到前台并 <code>ctx.sessions.open(sessionId)</code> 直接打开那条会话（vision 插件有先例）。多会话并发时一步到位；实现多一步 sessionId 传递。</p>
+        <div class="mini">
+          <div class="side">
+            <div class="s-item">周末出行计划</div>
+            <div class="s-item hit">调试 WebSocket 重连</div>
+            <div class="s-item">周报草稿</div>
+          </div>
+          <div class="win">dsh-gui 窗口，定位到该会话</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
