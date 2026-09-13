@@ -6,22 +6,25 @@ import * as client from '../src/client/index.ts'
 import { UsageWorker } from '../src/features/token-usage/host/usage-worker.ts'
 
 describe('dual-face plugin shape', () => {
-  it('host half declares the shell + token-usage services and exports apply', () => {
+  it('host half declares the shell + token-usage + turn-notify services and exports apply', () => {
     expect(host.name).toBe('dsh-gui')
     // Since dsh 0.1.5 the /api composition lives inside Connection; the
-    // apiProxy injection is gone from the carrier path.
+    // apiProxy injection is gone from the carrier path. turn-notify adds the
+    // settings seam and the log-backed session-title service.
     expect(host.inject).toEqual([
       'clientModules',
       'webServer',
       'connection',
       'sessions',
       'sessionPersistence',
+      'settings',
+      'sessionTitle',
     ])
     expect(typeof host.apply).toBe('function')
   })
 
-  it('client half declares slots + locale and exports apply', () => {
-    expect(client.inject).toEqual(['slots', 'locale'])
+  it('client half declares slots + locale + turn-notify services and exports apply', () => {
+    expect(client.inject).toEqual(['slots', 'locale', 'settingsScope', 'sessions'])
     expect(typeof client.apply).toBe('function')
   })
 
